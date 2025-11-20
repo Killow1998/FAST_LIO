@@ -97,7 +97,6 @@ private:
   nav_msgs::Odometry odomfromIMU_;
   string odomfromIMU_frame_;
   string odomfromIMU_child_frame_;
-  string odomfromIMU_topic_;
   ros::Publisher odomfromIMU_pub_;
   double gravity_m_s2_;
 };
@@ -316,6 +315,8 @@ void ImuProcess::UndistortPcl(
     IMUpose.push_back(set_pose6d(offs_t, acc_s_last, angvel_last, imu_state.vel,
                                  imu_state.pos,
                                  imu_state.rot.toRotationMatrix()));
+
+    // modify by h2q
     Eigen::Quaterniond q_curr(imu_state.rot);
     odomfromIMU_.header = head->header;
     odomfromIMU_.header.frame_id = odomfromIMU_frame_;
@@ -438,18 +439,18 @@ void ImuProcess::Process(const MeasureGroup &meas,
   // cout<<"[ IMU Process ]: Time: "<<t3 - t1<<endl;
 }
 
+// modify by h2q
 void ImuProcess::IMUstateInit(ros::NodeHandle &nh, std::string frame_id,
                               std::string child_id, std::string topic,
                               double grav_val) {
   /* Assign configuration parameters to member variables */
   odomfromIMU_frame_ = frame_id;
   odomfromIMU_child_frame_ = child_id;
-  odomfromIMU_topic_ = topic;
   gravity_m_s2_ = grav_val;
 
   /* Initialize the ROS Publisher */
   // High frequency publisher needs a larger queue size
-  odomfromIMU_pub_ = nh.advertise<nav_msgs::Odometry>(odomfromIMU_topic_, 1000);
+  odomfromIMU_pub_ = nh.advertise<nav_msgs::Odometry>(topic, 1000);
 
   /* Initialize the Odometry message structure with default/static values */
   odomfromIMU_.header.frame_id = odomfromIMU_frame_;
