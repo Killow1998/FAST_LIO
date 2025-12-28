@@ -96,8 +96,8 @@ B. The warning message "Failed to find match for field 'time'." means the timest
 
 C. We recommend to set the **extrinsic_est_en** to false if the extrinsic is give. As for the extrinsic initiallization, please refer to our recent work: [**Robust Real-time LiDAR-inertial Initialization**](https://github.com/hku-mars/LiDAR_IMU_Init).
 
-### 3.1 For Avia
-Connect to your PC to Livox Avia LiDAR by following  [Livox-ros-driver2 installation](https://github.com/Livox-SDK/livox_ros_driver2), then
+### 3.1 For Mid-360
+Connect to your PC to Livox Mid-360 LiDAR by following  [Livox-ros-driver2 installation](https://github.com/Livox-SDK/livox_ros_driver2), then
 ```bash
     cd ~/$ROS2_WS
     source install/setup.bash
@@ -106,11 +106,11 @@ Connect to your PC to Livox Avia LiDAR by following  [Livox-ros-driver2 installa
 ```
 - For livox serials, FAST-LIO only support the data collected by the custom message format since only its `livox_ros_driver2/CustomMsg` data structure produces the timestamp of each LiDAR point which is very important for the motion undistortion.
 
-### 3.2 For Livox serials with external IMU
+### 3.2 For other Livox LiDARs (Avia, Horizon, etc)
 
-mapping_avia.launch.py theoretically supports mid-70, mid-40 or other livox serial LiDAR, but need to setup some parameters before run:
+`mapping_avia.launch.py` or `mapping_horizon.launch.py` theoretically supports mid-70, mid-40 or other livox serial LiDAR, but need to setup some parameters before run:
 
-Edit `config/avia.yaml` to set the below parameters:
+Edit `config/avia.yaml` or `config/horizon.yaml` to set the below parameters:
 
 1. LiDAR point cloud topic name: `lid_topic`
 2. IMU topic name: `imu_topic`
