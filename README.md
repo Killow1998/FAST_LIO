@@ -82,7 +82,7 @@ Clone the repository and colcon build:
 
 ```bash
     cd ~/$ROS2_WS/src
-    git clone https://github.com/hku-mars/FAST_LIO.git
+    git clone -b humble https://github.com/Killow1998/FAST_LIO.git
     cd ..
     colcon build --symlink-install
     source install/setup.bash
@@ -101,8 +101,7 @@ Connect to your PC to Livox Avia LiDAR by following  [Livox-ros-driver2 installa
 ```bash
     cd ~/$ROS2_WS
     source install/setup.bash
-    ros2 launch fast_lio mapping_avia.launch.py
-    # Run livox_ros_driver2 (example for MID360, adjust for your lidar)
+    ros2 launch fast_lio mapping_mid360.launch.py
     ros2 launch livox_ros_driver2 msg_MID360_launch.py
 ```
 - For livox serials, FAST-LIO only support the data collected by the custom message format since only its `livox_ros_driver2/CustomMsg` data structure produces the timestamp of each LiDAR point which is very important for the motion undistortion.
