@@ -6,23 +6,23 @@
 #include <condition_variable>
 #include <csignal>
 #include <deque>
-#include <eigen_conversions/eigen_msg.h>
+// #include <eigen_conversions/eigen_msg.h>
 #include <fstream>
-#include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/msg/vector3.hpp>
 #include <math.h>
 #include <mutex>
-#include <nav_msgs/Odometry.h>
+#include <nav_msgs/msg/odometry.hpp>
 #include <pcl/common/io.h>
 #include <pcl/common/transforms.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <so3_math.h>
-#include <tf/transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <thread>
 
 /// *************Preconfiguration
@@ -42,7 +42,7 @@ public:
   ~ImuProcess();
 
   void Reset();
-  void Reset(double start_timestamp, const sensor_msgs::ImuConstPtr &lastimu);
+  void Reset(double start_timestamp, const sensor_msgs::msg::Imu::ConstSharedPtr &lastimu);
   void set_extrinsic(const V3D &transl, const M3D &rot);
   void set_extrinsic(const V3D &transl);
   void set_extrinsic(const MD(4, 4) & T);
@@ -56,7 +56,7 @@ public:
                PointCloudXYZI::Ptr pcl_un_);
 
   // modify by h2q
-  void IMUstateInit(ros::NodeHandle &nh, std::string frame_id,
+  void IMUstateInit(rclcpp::Node::SharedPtr nh, std::string frame_id,
                     std::string child_id, std::string topic, double grav_val);
 
   ofstream fout_imu;
@@ -77,8 +77,8 @@ private:
                     PointCloudXYZI &pcl_in_out);
 
   PointCloudXYZI::Ptr cur_pcl_un_;
-  sensor_msgs::ImuConstPtr last_imu_;
-  deque<sensor_msgs::ImuConstPtr> v_imu_;
+  sensor_msgs::msg::Imu::ConstSharedPtr last_imu_;
+  deque<sensor_msgs::msg::Imu::ConstSharedPtr> v_imu_;
   vector<Pose6D> IMUpose;
   vector<M3D> v_rot_pcl_;
   M3D Lidar_R_wrt_IMU;
@@ -94,10 +94,10 @@ private:
   bool imu_need_init_ = true;
 
   // modify by h2q
-  nav_msgs::Odometry odomfromIMU_;
+  nav_msgs::msg::Odometry odomfromIMU_;
   string odomfromIMU_frame_;
   string odomfromIMU_child_frame_;
-  ros::Publisher odomfromIMU_pub_;
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odomfromIMU_pub_;
   double gravity_m_s2_;
 };
 
@@ -114,7 +114,7 @@ ImuProcess::ImuProcess()
   angvel_last = Zero3d;
   Lidar_T_wrt_IMU = Zero3d;
   Lidar_R_wrt_IMU = Eye3d;
-  last_imu_.reset(new sensor_msgs::Imu());
+  last_imu_.reset(new sensor_msgs::msg::Imu());
 }
 
 ImuProcess::~ImuProcess() {}
@@ -129,7 +129,7 @@ void ImuProcess::Reset() {
   init_iter_num = 1;
   v_imu_.clear();
   IMUpose.clear();
-  last_imu_.reset(new sensor_msgs::Imu());
+  last_imu_.reset(new sensor_msgs::msg::Imu());
   cur_pcl_un_.reset(new PointCloudXYZI());
 }
 
@@ -236,8 +236,8 @@ void ImuProcess::UndistortPcl(
   /*** add the imu of the last frame-tail to the of current frame-head ***/
   auto v_imu = meas.imu;
   v_imu.push_front(last_imu_);
-  const double &imu_beg_time = v_imu.front()->header.stamp.toSec();
-  const double &imu_end_time = v_imu.back()->header.stamp.toSec();
+  double imu_beg_time = rclcpp::Time(v_imu.front()->header.stamp).seconds();
+  double imu_end_time = rclcpp::Time(v_imu.back()->header.stamp).seconds();
 
   double pcl_beg_time = meas.lidar_beg_time;
   double pcl_end_time = meas.lidar_end_time;
@@ -271,7 +271,7 @@ void ImuProcess::UndistortPcl(
     auto &&head = *(it_imu);
     auto &&tail = *(it_imu + 1);
 
-    if (tail->header.stamp.toSec() < last_lidar_end_time_)
+    if (rclcpp::Time(tail->header.stamp).seconds() < last_lidar_end_time_)
       continue;
 
     angvel_avr << 0.5 * (head->angular_velocity.x + tail->angular_velocity.x),
@@ -289,11 +289,11 @@ void ImuProcess::UndistortPcl(
     acc_avr = acc_avr * gravity_m_s2_ / mean_acc.norm(); // - state_inout.ba;
     // modify by h2q use input gravity_value in yaml
 
-    if (head->header.stamp.toSec() < last_lidar_end_time_) {
-      dt = tail->header.stamp.toSec() - last_lidar_end_time_;
+    if (rclcpp::Time(head->header.stamp).seconds() < last_lidar_end_time_) {
+      dt = rclcpp::Time(tail->header.stamp).seconds() - last_lidar_end_time_;
       // dt = tail->header.stamp.toSec() - pcl_beg_time;
     } else {
-      dt = tail->header.stamp.toSec() - head->header.stamp.toSec();
+      dt = rclcpp::Time(tail->header.stamp).seconds() - rclcpp::Time(head->header.stamp).seconds();
     }
 
     in.acc = acc_avr;
@@ -311,7 +311,7 @@ void ImuProcess::UndistortPcl(
     for (int i = 0; i < 3; i++) {
       acc_s_last[i] += imu_state.grav[i];
     }
-    double &&offs_t = tail->header.stamp.toSec() - pcl_beg_time;
+    double &&offs_t = rclcpp::Time(tail->header.stamp).seconds() - pcl_beg_time;
     IMUpose.push_back(set_pose6d(offs_t, acc_s_last, angvel_last, imu_state.vel,
                                  imu_state.pos,
                                  imu_state.rot.toRotationMatrix()));
@@ -334,7 +334,7 @@ void ImuProcess::UndistortPcl(
     odomfromIMU_.twist.twist.angular.x = angvel_last(0);
     odomfromIMU_.twist.twist.angular.y = angvel_last(1);
     odomfromIMU_.twist.twist.angular.z = angvel_last(2);
-    odomfromIMU_pub_.publish(odomfromIMU_);
+    odomfromIMU_pub_->publish(odomfromIMU_);
   }
 
   /*** calculated the pos and attitude prediction at the frame-end ***/
@@ -403,7 +403,7 @@ void ImuProcess::Process(const MeasureGroup &meas,
   if (meas.imu.empty()) {
     return;
   };
-  ROS_ASSERT(meas.lidar != nullptr);
+  assert(meas.lidar != nullptr);
 
   if (imu_need_init_) {
     /// The very first lidar frame
@@ -422,7 +422,7 @@ void ImuProcess::Process(const MeasureGroup &meas,
 
       cov_acc = cov_acc_scale;
       cov_gyr = cov_gyr_scale;
-      ROS_INFO("IMU Initial Done");
+      RCLCPP_INFO(rclcpp::get_logger("fast_lio"), "IMU Initial Done");
       // ROS_INFO("IMU Initial Done: Gravity: %.4f %.4f %.4f %.4f; state.bias_g: %.4f %.4f %.4f; acc covarience: %.8f %.8f %.8f; gry covarience: %.8f %.8f %.8f",\
       //          imu_state.grav[0], imu_state.grav[1], imu_state.grav[2], mean_acc.norm(), cov_bias_gyr[0], cov_bias_gyr[1], cov_bias_gyr[2], cov_acc[0], cov_acc[1], cov_acc[2], cov_gyr[0], cov_gyr[1], cov_gyr[2]);
       fout_imu.open(DEBUG_FILE_DIR("imu.txt"), ios::out);
@@ -440,7 +440,7 @@ void ImuProcess::Process(const MeasureGroup &meas,
 }
 
 // modify by h2q
-void ImuProcess::IMUstateInit(ros::NodeHandle &nh, std::string frame_id,
+void ImuProcess::IMUstateInit(rclcpp::Node::SharedPtr nh, std::string frame_id,
                               std::string child_id, std::string topic,
                               double grav_val) {
   /* Assign configuration parameters to member variables */
@@ -450,7 +450,7 @@ void ImuProcess::IMUstateInit(ros::NodeHandle &nh, std::string frame_id,
 
   /* Initialize the ROS Publisher */
   // High frequency publisher needs a larger queue size
-  odomfromIMU_pub_ = nh.advertise<nav_msgs::Odometry>(topic, 1000);
+  odomfromIMU_pub_ = nh->create_publisher<nav_msgs::msg::Odometry>(topic, 1000);
 
   /* Initialize the Odometry message structure with default/static values */
   odomfromIMU_.header.frame_id = odomfromIMU_frame_;
