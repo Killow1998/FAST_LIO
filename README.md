@@ -82,9 +82,9 @@ Clone the repository and colcon build:
 
 ```bash
     cd ~/$ROS2_WS/src
-    git clone -b humble https://github.com/Killow1998/FAST_LIO.git
+    git clone --recurse-submodules -b humble https://github.com/Killow1998/FAST_LIO.git
     cd ..
-    colcon build --symlink-install
+    colcon build --symlink-install --packages-select fast_lio
     source install/setup.bash
 ```
 ## 3. Directly run
