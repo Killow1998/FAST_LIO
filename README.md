@@ -24,21 +24,12 @@
 3. Parallel KD-Tree Search to decrease the computation;
 
 This ROS 2 branch vendors `ikd-Tree` directly under `include/ikd-Tree`, so cloning the repository does not require any git submodule initialization.
+This fork intentionally omits the bundled `doc/` media assets to stay lightweight; the original figures, GIFs, and PDFs are referenced from the upstream repository instead.
 
 ## FAST-LIO 2.0 (2021-07-05 Update)
-<!-- ![image](doc/real_experiment2.gif) -->
-<!-- [![Watch the video](doc/real_exp_2.png)](https://youtu.be/2OvjGnxszf8) -->
-<div align="left">
-<img src="doc/real_experiment2.gif" width=49.6% />
-<img src="doc/ulhkwh_fastlio.gif" width = 49.6% >
-</div>
-
 **Related video:**  [FAST-LIO2](https://youtu.be/2OvjGnxszf8),  [FAST-LIO1](https://youtu.be/iYCY6T79oNU)
 
-**Pipeline:**
-<div align="center">
-<img src="doc/overview_fastlio2.svg" width=99% />
-</div>
+**Upstream media references:** [FAST-LIO2 demo GIF](https://github.com/hku-mars/FAST_LIO/blob/main/doc/real_experiment2.gif), [FAST-LIO1 demo GIF](https://github.com/hku-mars/FAST_LIO/blob/main/doc/ulhkwh_fastlio.gif), [pipeline overview](https://github.com/hku-mars/FAST_LIO/blob/main/doc/overview_fastlio2.svg)
 
 **New Features:**
 1. Incremental mapping using [ikd-Tree](https://github.com/hku-mars/ikd-Tree), achieve faster speed and over 100Hz LiDAR rate.
@@ -47,20 +38,15 @@ This ROS 2 branch vendors `ikd-Tree` directly under `include/ikd-Tree`, so cloni
 4. Support external IMU.
 5. Support ARM-based platforms including Khadas VIM3, Nivida TX2, Raspberry Pi 4B(8G RAM).
 
-**Related papers**: 
+**Related papers**:
 
-[FAST-LIO2: Fast Direct LiDAR-inertial Odometry](doc/Fast_LIO_2.pdf)
+[FAST-LIO2: Fast Direct LiDAR-inertial Odometry](https://github.com/hku-mars/FAST_LIO/blob/main/doc/Fast_LIO_2.pdf)
 
 [FAST-LIO: A Fast, Robust LiDAR-inertial Odometry Package by Tightly-Coupled Iterated Kalman Filter](https://arxiv.org/abs/2010.08196)
 
 **Contributors**
 
 [Wei Xu 徐威](https://github.com/XW-HKU)，[Yixi Cai 蔡逸熙](https://github.com/Ecstasy-EC)，[Dongjiao He 贺东娇](https://github.com/Joanna-HE)，[Fangcheng Zhu 朱方程](https://github.com/zfc-zfc)，[Jiarong Lin 林家荣](https://github.com/ziv-lin)，[Zheng Liu 刘政](https://github.com/Zale-Liu), [Borong Yuan](https://github.com/borongyuan)
-
-<!-- <div align="center">
-    <img src="doc/results/HKU_HW.png" width = 49% >
-    <img src="doc/results/HKU_MB_001.png" width = 49% >
-</div> -->
 
 ## 1. Prerequisites
 ### 1.1 **Ubuntu** and **ROS**
@@ -158,7 +144,7 @@ ros2 launch fast_lio mapping_marsim.launch.py
 
 ### 3.5 PCD file save
 
-Set ``` pcd_save_enable ``` in launchfile to ``` 1 ```. All the scans (in global frame) will be accumulated and saved to the file ``` FAST_LIO/PCD/scans.pcd ``` after the FAST-LIO is terminated. ```pcl_viewer scans.pcd``` can visualize the point clouds.
+Enable `pcd_save.pcd_save_en`. In this fork, `config/mid360.yaml` enables it by default, so Mid-360 runs will accumulate global-frame scans and save them to `FAST_LIO/PCD/scans.pcd` when the node exits normally. Generated `.pcd` files are ignored by git, while the empty `PCD/` directory is kept in the repository.
 
 *Tips for pcl_viewer:*
 - change what to visualize/color by pressing keyboard 1,2,3,4,5 when pcl_viewer is running. 
@@ -172,11 +158,9 @@ Set ``` pcd_save_enable ``` in launchfile to ``` 1 ```. All the scans (in global
 
 ## 4. Rosbag Example
 ### 4.1 Livox Avia Rosbag
-<div align="left">
-<img src="doc/results/HKU_LG_Indoor.png" width=47% />
-<img src="doc/results/HKU_MB_002.png" width = 51% >
-
 Files: Can be downloaded from [google drive](https://drive.google.com/drive/folders/1CGYEJ9-wWjr8INyan6q1BZz_5VtGB-fP?usp=sharing)
+
+Reference result images remain available in the upstream repository: [HKU_LG_Indoor](https://github.com/hku-mars/FAST_LIO/blob/main/doc/results/HKU_LG_Indoor.png), [HKU_MB_002](https://github.com/hku-mars/FAST_LIO/blob/main/doc/results/HKU_MB_002.png)
 
 Run:
 ```
@@ -202,10 +186,7 @@ In order to validate the robustness and computational efficiency of FAST-LIO in 
 
 The main structure of this UAV is 3d printed (Aluminum or PLA), the .stl file will be open-sourced in the future.
 
-<div align="center">
-    <img src="doc/uav01.jpg" width=40.5% >
-    <img src="doc/uav_system.png" width=57% >
-</div>
+Upstream references: [UAV photo](https://github.com/hku-mars/FAST_LIO/blob/main/doc/uav01.jpg), [UAV system diagram](https://github.com/hku-mars/FAST_LIO/blob/main/doc/uav_system.png), [ground configuration PDF](https://github.com/hku-mars/FAST_LIO/blob/main/doc/uav_ground.pdf)
 
 ## 6.Acknowledgments
 
