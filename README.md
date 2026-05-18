@@ -23,6 +23,8 @@
 2. Automaticaly initialized at most steady environments;
 3. Parallel KD-Tree Search to decrease the computation;
 
+This ROS 2 branch vendors `ikd-Tree` directly under `include/ikd-Tree`, so cloning the repository does not require any git submodule initialization.
+
 ## FAST-LIO 2.0 (2021-07-05 Update)
 <!-- ![image](doc/real_experiment2.gif) -->
 <!-- [![Watch the video](doc/real_exp_2.png)](https://youtu.be/2OvjGnxszf8) -->
@@ -82,7 +84,7 @@ Clone the repository and colcon build:
 
 ```bash
     cd ~/$ROS2_WS/src
-    git clone --recurse-submodules -b humble https://github.com/Killow1998/FAST_LIO.git
+    git clone -b humble https://github.com/Killow1998/FAST_LIO.git
     cd ..
     colcon build --symlink-install --packages-select fast_lio
     source install/setup.bash

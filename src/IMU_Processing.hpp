@@ -334,7 +334,9 @@ void ImuProcess::UndistortPcl(
     odomfromIMU_.twist.twist.angular.x = angvel_last(0);
     odomfromIMU_.twist.twist.angular.y = angvel_last(1);
     odomfromIMU_.twist.twist.angular.z = angvel_last(2);
-    odomfromIMU_pub_->publish(odomfromIMU_);
+    if (rclcpp::ok() && odomfromIMU_pub_) {
+      odomfromIMU_pub_->publish(odomfromIMU_);
+    }
   }
 
   /*** calculated the pos and attitude prediction at the frame-end ***/
