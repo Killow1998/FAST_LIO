@@ -83,6 +83,13 @@ private:
   vector<M3D> v_rot_pcl_;
   M3D Lidar_R_wrt_IMU;
   V3D Lidar_T_wrt_IMU;
+  // Cleared the moment the platform is seen to move; until then initialisation
+  // keeps running and the filter stays out of the way.
+  bool imu_static_ = true;
+  // How long to keep averaging if the platform never moves. Long enough that a
+  // deliberate still start is fully used, short enough that a mis-detection
+  // cannot suppress the map indefinitely.
+  double max_static_init_s_ = 30.0;
   V3D mean_acc;
   V3D mean_gyr;
   V3D angvel_last;
@@ -180,6 +187,20 @@ void ImuProcess::IMU_init(
     const auto &gyr_acc = imu->angular_velocity;
     cur_acc << imu_acc.x, imu_acc.y, imu_acc.z;
     cur_gyr << gyr_acc.x, gyr_acc.y, gyr_acc.z;
+
+    // Measured against the running estimate, before it absorbs this sample.
+    // Standing still on 0723 and b22, the accelerometer stays within about
+    // 0.06 of its mean and the rate within 0.02 rad/s, so these thresholds sit
+    // well clear of sensor noise and well below anything a walking robot does.
+    // The first few dozen samples are skipped because the mean is not yet worth
+    // comparing against.
+    if (N > 50) {
+      const double acc_dev = (cur_acc - mean_acc).norm();
+      const double gyr_dev = (cur_gyr - mean_gyr).norm();
+      if (acc_dev > 0.15 || gyr_dev > 0.05) {
+        imu_static_ = false;
+      }
+    }
 
     mean_acc += (cur_acc - mean_acc) / N;
     mean_gyr += (cur_gyr - mean_gyr) / N;
@@ -439,7 +460,12 @@ void ImuProcess::Process(const MeasureGroup &meas,
     last_imu_ = meas.imu.back();
 
     state_ikfom imu_state = kf_state.get_x();
-    if (init_iter_num > MAX_INI_COUNT) {
+    // Attitude and the gravity direction cannot be told apart while nothing is
+    // moving, so hand them to the filter only once there is motion to separate
+    // them -- or once the cap says to stop waiting.
+    const double waited_s = meas.lidar_beg_time - first_lidar_time;
+    const bool ready = !imu_static_ || waited_s >= max_static_init_s_;
+    if (init_iter_num > MAX_INI_COUNT && ready) {
       // cov_acc *= pow(G_m_s2 / mean_acc.norm(), 2);
       cov_acc *= pow(gravity_m_s2_ / mean_acc.norm(), 2);
       // modify by h2q use input gravity_value in yaml
@@ -447,7 +473,10 @@ void ImuProcess::Process(const MeasureGroup &meas,
 
       cov_acc = cov_acc_scale;
       cov_gyr = cov_gyr_scale;
-      RCLCPP_INFO(rclcpp::get_logger("fast_lio"), "IMU Initial Done");
+      RCLCPP_INFO(rclcpp::get_logger("fast_lio"),
+                  "IMU Initial Done: waited %.2f s over %d samples, exit=%s",
+                  waited_s, init_iter_num - 1,
+                  imu_static_ ? "cap reached while still" : "motion detected");
       // ROS_INFO("IMU Initial Done: Gravity: %.4f %.4f %.4f %.4f; state.bias_g: %.4f %.4f %.4f; acc covarience: %.8f %.8f %.8f; gry covarience: %.8f %.8f %.8f",\
       //          imu_state.grav[0], imu_state.grav[1], imu_state.grav[2], mean_acc.norm(), cov_bias_gyr[0], cov_bias_gyr[1], cov_bias_gyr[2], cov_acc[0], cov_acc[1], cov_acc[2], cov_gyr[0], cov_gyr[1], cov_gyr[2]);
       fout_imu.open(DEBUG_FILE_DIR("imu.txt"), ios::out);
