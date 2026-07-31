@@ -224,7 +224,30 @@ void ImuProcess::IMU_init(
   init_P(9, 9) = init_P(10, 10) = init_P(11, 11) = 0.00001;
   init_P(15, 15) = init_P(16, 16) = init_P(17, 17) = 0.0001;
   init_P(18, 18) = init_P(19, 19) = init_P(20, 20) = 0.001;
-  init_P(21, 21) = init_P(22, 22) = 0.00001;
+  /* --- gravity direction is only as certain as the average it came from --- */
+  // The two gravity states span the tangent plane of the S2 manifold, so their
+  // variance is an angle. The angle is estimated from mean_acc, whose own
+  // per-axis variance cov_acc is measured just above, over N samples:
+  //
+  //     var(direction) = var(acc) / (|g|^2 * N)
+  //
+  // The previous constant 0.00001 asserted 0.18 deg from roughly 0.1 s of a
+  // walking robot's accelerometer. The estimate was later seen to be about
+  // 10 deg out, and the filter spent 120 s correcting it because it had been
+  // told there was little to correct; the error injected meanwhile is frozen
+  // into the first keyframes.
+  const double acc_var = std::max(cov_acc.mean(), 1e-9);
+  const double n_used = std::max(1.0, static_cast<double>(N - 1));
+  const double grav_dir_var =
+      acc_var / (gravity_m_s2_ * gravity_m_s2_ * n_used);
+  // Floor at the value that used to be asserted unconditionally, so this can
+  // only ever loosen the prior, never tighten it.
+  init_P(21, 21) = init_P(22, 22) = std::max(grav_dir_var, 0.00001);
+  RCLCPP_INFO(rclcpp::get_logger("fast_lio"),
+              "[IMU_init] N=%d acc_var=%.6f grav_dir_var=%.3e (%.3f deg)",
+              N - 1, acc_var, init_P(21, 21),
+              std::sqrt(init_P(21, 21)) * 180.0 / M_PI);
+  /* --- modify end --- */
   kf_state.change_P(init_P);
   last_imu_ = meas.imu.back();
 }
