@@ -37,7 +37,7 @@
 #include <Eigen/Core>
 #include <csignal>
 #include <fstream>
-#include <geometry_msgs/msg/vector3.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <ikd-Tree/ikd_Tree.h>
 #include <livox_ros_driver2/msg/custom_msg.hpp>
 #include <math.h>
@@ -53,6 +53,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <so3_math.h>
+#include <std_msgs/msg/u_int64.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -88,7 +89,8 @@ mutex mtx_buffer;
 condition_variable sig_buffer;
 
 string root_dir = ROOT_DIR;
-string map_file_path, lid_topic, imu_topic;
+string map_file_path, lid_topic, imu_topic, gravity_topic,
+    replay_lidar_ack_topic;
 // modify by h2q
 string world_frame, body_frame;
 double gravity_m_s2;
@@ -664,6 +666,23 @@ void publish_odometry(const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPt
   }
 }
 
+void publish_gravity(
+    const rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr
+        &pubGravity) {
+  if (!ros_is_active()) {
+    return;
+  }
+
+  geometry_msgs::msg::Vector3Stamped gravity;
+  gravity.header.stamp =
+      rclcpp::Time(static_cast<int64_t>(lidar_end_time * 1e9));
+  gravity.header.frame_id = world_frame;
+  gravity.vector.x = state_point.grav[0];
+  gravity.vector.y = state_point.grav[1];
+  gravity.vector.z = state_point.grav[2];
+  pubGravity->publish(gravity);
+}
+
 void publish_path(const rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath) {
   if (!ros_is_active()) {
     return;
@@ -826,6 +845,11 @@ int main(int argc, char **argv) {
   nh->get_parameter("common.lid_topic", lid_topic);
   nh->declare_parameter<string>("common.imu_topic", "/livox/imu");
   nh->get_parameter("common.imu_topic", imu_topic);
+  nh->declare_parameter<string>("common.gravity_topic", "/lio_gravity");
+  nh->get_parameter("common.gravity_topic", gravity_topic);
+  nh->declare_parameter<string>("common.replay_lidar_ack_topic", "");
+  nh->get_parameter("common.replay_lidar_ack_topic",
+                    replay_lidar_ack_topic);
   nh->declare_parameter<bool>("common.time_sync_en", false);
   nh->get_parameter("common.time_sync_en", time_sync_en);
   nh->declare_parameter<double>("common.time_offset_lidar_to_imu", 0.0);
@@ -962,7 +986,25 @@ int main(int argc, char **argv) {
       nh->create_publisher<sensor_msgs::msg::PointCloud2>("/Laser_map", 100);
   auto pubOdomAftMapped =
       nh->create_publisher<nav_msgs::msg::Odometry>("/Odometry", 100);
+  auto pubGravity =
+      nh->create_publisher<geometry_msgs::msg::Vector3Stamped>(gravity_topic,
+                                                               100);
+  rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr pubReplayLidarAck;
+  if (!replay_lidar_ack_topic.empty()) {
+    pubReplayLidarAck =
+        nh->create_publisher<std_msgs::msg::UInt64>(replay_lidar_ack_topic,
+                                                    10);
+  }
   auto pubPath = nh->create_publisher<nav_msgs::msg::Path>("/path", 100);
+  uint64_t replay_lidar_ack_sequence = 0;
+  const auto publish_replay_lidar_ack = [&]() {
+    if (!pubReplayLidarAck) {
+      return;
+    }
+    std_msgs::msg::UInt64 ack;
+    ack.data = ++replay_lidar_ack_sequence;
+    pubReplayLidarAck->publish(ack);
+  };
   //------------------------------------------------------------------------------------------------------
   rclcpp::Rate rate(5000);
   while (rclcpp::ok()) {
@@ -975,6 +1017,7 @@ int main(int argc, char **argv) {
         first_lidar_time = Measures.lidar_beg_time;
         p_imu->first_lidar_time = first_lidar_time;
         flg_first_scan = false;
+        publish_replay_lidar_ack();
         continue;
       }
 
@@ -993,6 +1036,7 @@ int main(int argc, char **argv) {
 
       if (feats_undistort->empty() || (feats_undistort == NULL)) {
         RCLCPP_WARN(nh->get_logger(), "No point, skip this scan!\n");
+        publish_replay_lidar_ack();
         continue;
       }
 
@@ -1018,6 +1062,7 @@ int main(int argc, char **argv) {
           }
           ikdtree.Build(feats_down_world->points);
         }
+        publish_replay_lidar_ack();
         continue;
       }
       int featsFromMapNum = ikdtree.validnum();
@@ -1030,6 +1075,7 @@ int main(int argc, char **argv) {
       /*** ICP and iterated Kalman filter update ***/
       if (feats_down_size < 5) {
         RCLCPP_WARN(nh->get_logger(), "No point, skip this scan!\n");
+        publish_replay_lidar_ack();
         continue;
       }
 
@@ -1086,6 +1132,7 @@ int main(int argc, char **argv) {
 
       /******* Publish odometry *******/
       publish_odometry(pubOdomAftMapped);
+      publish_gravity(pubGravity);
 
       /*** add the feature points to map kdtree ***/
       t3 = omp_get_wtime();
@@ -1150,6 +1197,7 @@ int main(int argc, char **argv) {
                  << feats_undistort->points.size() << endl;
         dump_lio_state_to_log(fp);
       }
+      publish_replay_lidar_ack();
     }
 
     rate.sleep();
@@ -1200,6 +1248,8 @@ int main(int argc, char **argv) {
   pubLaserCloudEffect.reset();
   pubLaserCloudMap.reset();
   pubOdomAftMapped.reset();
+  pubGravity.reset();
+  pubReplayLidarAck.reset();
   pubPath.reset();
   br.reset();
   p_imu.reset();
