@@ -86,11 +86,11 @@ private:
   // Cleared the moment the platform is seen to move; until then initialisation
   // keeps running and the filter stays out of the way.
   bool imu_static_ = true;
-  // How long to keep averaging if the platform never moves. The 0723 recording
-  // stands still for about 33 s, so 30 hit this cap before the robot moved and
-  // averaged three seconds of filter drift into the result. Sixty leaves the
-  // decision to the motion test while still bounding the wait.
-  double max_static_init_s_ = 60.0;
+  // How long to keep averaging while the platform has not moved. Zero disables
+  // the wait entirely, which is the default because measuring it did not help:
+  // averaging 6960 samples instead of 20 halved the map tilt, 3.08 to 1.77 deg,
+  // and left the opening ten metres exactly as wrong. See section 113.
+  double max_static_init_s_ = 0.0;
   V3D mean_acc;
   V3D mean_gyr;
   V3D angvel_last;
