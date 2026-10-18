@@ -1,5 +1,8 @@
 laserMapping:
   ros__parameters:
+    # Must exceed 2 * MOV_THRESHOLD (1.5) * mapping.det_range. Otherwise
+    # the local map shifts and deletes nearby geometry even while stationary.
+    cube_side_length: 500.0
     common:
         lid_topic:  "/livox/lidar"
         imu_topic:  "/livox/imu"
