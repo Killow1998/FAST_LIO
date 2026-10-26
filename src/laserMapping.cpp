@@ -1035,7 +1035,8 @@ int main(int argc, char **argv) {
       pos_lid = state_point.pos + state_point.rot * state_point.offset_T_L_I;
 
       if (feats_undistort->empty() || (feats_undistort == NULL)) {
-        RCLCPP_WARN(nh->get_logger(), "No point, skip this scan!\n");
+        RCLCPP_WARN_THROTTLE(nh->get_logger(), *nh->get_clock(), 1000,
+                             "No point, skip this scan!");
         publish_replay_lidar_ack();
         continue;
       }
@@ -1074,7 +1075,8 @@ int main(int argc, char **argv) {
 
       /*** ICP and iterated Kalman filter update ***/
       if (feats_down_size < 5) {
-        RCLCPP_WARN(nh->get_logger(), "No point, skip this scan!\n");
+        RCLCPP_WARN_THROTTLE(nh->get_logger(), *nh->get_clock(), 1000,
+                             "No point, skip this scan!");
         publish_replay_lidar_ack();
         continue;
       }

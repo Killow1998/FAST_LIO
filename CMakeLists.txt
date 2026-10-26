@@ -84,4 +84,17 @@ install(DIRECTORY launch config rviz_cfg
   DESTINATION share/${PROJECT_NAME}
 )
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_imu_initialization test/imu_initialization.cpp)
+  target_include_directories(test_imu_initialization PRIVATE src)
+  target_link_libraries(test_imu_initialization Eigen3::Eigen)
+  ament_add_gtest(test_imu_process_initialization test/imu_process_initialization.cpp)
+  target_include_directories(test_imu_process_initialization PRIVATE src)
+  target_link_libraries(test_imu_process_initialization ${PCL_LIBRARIES}
+    OpenMP::OpenMP_CXX "${cpp_typesupport_target}")
+  ament_target_dependencies(test_imu_process_initialization
+    rclcpp sensor_msgs nav_msgs tf2_ros pcl_conversions livox_ros_driver2)
+endif()
+
 ament_package()

@@ -84,6 +84,40 @@ B. The warning message "Failed to find match for field 'time'." means the timest
 
 C. We recommend to set the **extrinsic_est_en** to false if the extrinsic is give. As for the extrinsic initiallization, please refer to our recent work: [**Robust Real-time LiDAR-inertial Initialization**](https://github.com/hku-mars/LiDAR_IMU_Init).
 
+### IMU startup in this fork
+
+Keep the sensor stationary until `IMU Initial Done` and the first `/Odometry`
+message. Initialization uses a recent, continuous one-second IMU window, with
+at least 20 samples. It checks both noise and changes between the two half-window
+means before committing gravity and gyro bias. Older startup motion leaves the
+window automatically; elapsed time alone never forces acceptance.
+
+The checks allow acceleration standard deviation up to 0.03 g and angular-rate
+RMS up to 0.05 rad/s. Half-window mean changes must stay within 0.005 g and
+0.01 rad/s. Acceleration statistics are normalized by the measured gravity
+magnitude, so recorded g and m/s² inputs use the same decision. These are
+stationary-start checks, not a dynamic initializer or an IMU calibration.
+Constant acceleration and sufficiently slow constant rotation cannot be
+distinguished from gravity and bias using this window alone.
+
+While waiting, the node reports at most ten window summaries per initialization,
+at most once per sensor second, and emits no initialized point cloud or odometry.
+A recording that starts
+in continuous motion may therefore wait indefinitely; provide a stationary
+lead-in instead of treating its missing initial poses as a successful start.
+IMU gaps above 0.1 s, backward time and invalid measurements restart the window.
+Storage is bounded at 2,048 samples. After initialization, the window is released
+and the existing tracking pipeline continues unchanged.
+
+`common.gravity_m_s2` sets both the acceleration scale and the filter's gravity
+magnitude. The initialization-to-deskew boundary uses the accepted scan end
+time and explicit last-IMU acceleration/rate values.
+
+With `BUILD_TESTING=ON`, `test_imu_initialization` covers motion rejection/recovery,
+noisy stationary input with gyro bias, acceleration units, timestamps and bounded
+storage. `test_imu_process_initialization` checks the committed filter state and
+stationary acceleration cancellation for three configured gravity magnitudes.
+
 ### 3.1 For Mid-360
 Connect to your PC to Livox Mid-360 LiDAR by following  [Livox-ros-driver2 installation](https://github.com/Livox-SDK/livox_ros_driver2), then
 ```bash
