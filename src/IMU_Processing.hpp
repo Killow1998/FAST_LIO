@@ -12,8 +12,6 @@ public:
 
   void Reset();
   void set_extrinsic(const V3D &transl, const M3D &rot);
-  void set_extrinsic(const V3D &transl);
-  void set_extrinsic(const MD(4, 4) & T);
   void set_gyr_cov(const V3D &scaler);
   void set_acc_cov(const V3D &scaler);
   void set_gyr_bias_cov(const V3D &b_g);
@@ -32,7 +30,6 @@ public:
   V3D cov_gyr_scale;
   V3D cov_bias_gyr;
   V3D cov_bias_acc;
-  double first_lidar_time;
   int lidar_type;
 
 private:

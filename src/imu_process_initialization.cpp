@@ -31,16 +31,6 @@ void ImuProcess::Reset() {
   last_imu_.reset(new fast_lio::ImuSample());
 }
 
-void ImuProcess::set_extrinsic(const MD(4, 4) & T) {
-  Lidar_T_wrt_IMU = T.block<3, 1>(0, 3);
-  Lidar_R_wrt_IMU = T.block<3, 3>(0, 0);
-}
-
-void ImuProcess::set_extrinsic(const V3D &transl) {
-  Lidar_T_wrt_IMU = transl;
-  Lidar_R_wrt_IMU.setIdentity();
-}
-
 void ImuProcess::set_extrinsic(const V3D &transl, const M3D &rot) {
   Lidar_T_wrt_IMU = transl;
   Lidar_R_wrt_IMU = rot;
@@ -60,7 +50,6 @@ bool ImuProcess::IMU_init(
   if (b_first_frame_) {
     Reset();
     b_first_frame_ = false;
-    first_lidar_time = meas.lidar_beg_time;
   }
   for (const auto &imu : meas.imu) {
     const auto &a = imu->linear_acceleration;

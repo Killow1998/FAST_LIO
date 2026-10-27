@@ -47,14 +47,12 @@ struct Mapper::Impl {
   PointCloudXYZI::Ptr corr_normvect{new PointCloudXYZI};
   PointCloudXYZI::Ptr saved_points{new PointCloudXYZI};
   std::vector<unsigned char> point_selected_surf;
-  std::vector<float> res_last;
   std::vector<PointVector> Nearest_Points;
   std::vector<BoxPointType> cub_needrm;
   BoxPointType LocalMap_Points;
   bool Localmap_Initialized = false, flg_EKF_inited = false;
-  int feats_down_size = 0, effct_feat_num = 0, kdtree_delete_counter = 0, add_point_size = 0;
-  double total_residual = 0., res_mean_last = .05;
-  double match_time = 0., solve_time = 0., kdtree_incremental_time = 0., kdtree_delete_time = 0.;
+  int feats_down_size = 0, effct_feat_num = 0;
+  double match_time = 0., solve_time = 0.;
   int path_frames = 0, save_frames = 0, pcd_index = 0;
   std::array<double, 36> published_covariance{};
   std::string diagnostic;

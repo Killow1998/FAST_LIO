@@ -42,8 +42,6 @@ inline MTK::get_cov<process_noise_ikfom>::type process_noise_cov()
 	return cov;
 }
 
-//double L_offset_to_I[3] = {0.04165, 0.02326, -0.0284}; // Avia
-//vect3 Lidar_offset_to_IMU(L_offset_to_I, 3);
 inline Eigen::Matrix<double, 24, 1> get_f(state_ikfom &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 24, 1> res = Eigen::Matrix<double, 24, 1>::Zero();
@@ -91,7 +89,6 @@ inline vect3 SO3ToEuler(const SO3 &orient)
 {
 	Eigen::Matrix<double, 3, 1> _ang;
 	Eigen::Vector4d q_data = orient.coeffs().transpose();
-	//scalar w=orient.coeffs[3], x=orient.coeffs[0], y=orient.coeffs[1], z=orient.coeffs[2];
 	double sqw = q_data[3]*q_data[3];
 	double sqx = q_data[0]*q_data[0];
 	double sqy = q_data[1]*q_data[1];

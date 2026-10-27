@@ -33,7 +33,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "mapper_impl.h"
-#include <omp.h>
 
 namespace fast_lio {
 constexpr float MOV_THRESHOLD = 1.5f;
@@ -49,8 +48,6 @@ void Mapper::Impl::pointBodyToWorld(PointType const *const pi, PointType *const 
 }
 void Mapper::Impl::lasermap_fov_segment() {
   cub_needrm.clear();
-  kdtree_delete_counter = 0;
-  kdtree_delete_time = 0.0;
   V3D pos_LiD = pos_lid;
   if (!Localmap_Initialized) {
     for (int i = 0; i < 3; i++) {
@@ -93,10 +90,8 @@ void Mapper::Impl::lasermap_fov_segment() {
 
   PointVector removed;
   ikdtree.acquire_removed_points(removed);
-  double delete_begin = omp_get_wtime();
   if (cub_needrm.size() > 0)
-    kdtree_delete_counter = ikdtree.Delete_Point_Boxes(cub_needrm);
-  kdtree_delete_time = omp_get_wtime() - delete_begin;
+    ikdtree.Delete_Point_Boxes(cub_needrm);
 }
 void Mapper::Impl::map_incremental() {
   PointVector PointToAdd;
@@ -110,8 +105,7 @@ void Mapper::Impl::map_incremental() {
     if (!Nearest_Points[i].empty() && flg_EKF_inited) {
       const PointVector &points_near = Nearest_Points[i];
       bool need_add = true;
-      BoxPointType Box_of_Point;
-      PointType downsample_result, mid_point;
+      PointType mid_point;
       mid_point.x = floor(feats_down_world->points[i].x / config.filter_size_map_min) *
                         config.filter_size_map_min +
                     0.5 * config.filter_size_map_min;
@@ -143,10 +137,7 @@ void Mapper::Impl::map_incremental() {
     }
   }
 
-  double st_time = omp_get_wtime();
-  add_point_size = ikdtree.Add_Points(PointToAdd, true);
+  ikdtree.Add_Points(PointToAdd, true);
   ikdtree.Add_Points(PointNoNeedDownsample, false);
-  add_point_size = PointToAdd.size() + PointNoNeedDownsample.size();
-  kdtree_incremental_time = omp_get_wtime() - st_time;
 }
 } // namespace fast_lio

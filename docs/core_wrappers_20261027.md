@@ -163,3 +163,44 @@ format comparisons, full replay outputs and `pcl_sort/comparison.json`.
 `handoff_manifest.json` records the committed revision, binary hashes and selected
 builds. Experimental alternatives remain identified separately. Publication and
 robot installation are separate actions after review.
+
+## Source cleanup after `3d1b6d1`
+
+A call-site and ownership audit removed 2,749 source lines net, including 2,602
+lines in the unused `Exp_mat.h` and `matplotlibcpp.h` headers. Neither header was
+included by the build or installed as part of the public SDK. Remaining changes
+remove commented-out preprocessing branches, unused yaw/residual/timing state,
+unused internal extrinsic overloads, an empty destructor and a one-call assignment
+wrapper. The emitted diagnostic fields and active algorithm parameters remain
+unchanged. Public input validation, initialization-window checks and native entry
+point exception reporting are retained. No locks, retries or fallback layers were
+added. Copyright notices in retained code remain intact.
+
+All builds and runs use CPUs `0,2,4,6`. Standalone, Humble and native Noetic each
+pass the existing 3/3 CTest targets. Both native wrappers pass four sensor-format
+replays with exact output equality to their respective pre-cleanup references.
+The complete 171-second replay consumes all 1,710 scans and 34,215 IMU samples;
+output counts and timestamps match the references.
+
+Humble's complete route matches all recorded fields exactly. The first Noetic
+cleanup run differs by up to 0.616 mm in scan pose, 0.736 mm in IMU-predicted pose
+and 0.136 mm in body points; its strict equality probe fails. Repeating the
+unchanged baseline reproduces its previous output exactly, and repeating the
+cleanup candidate also matches that baseline exactly. Thus the observed cleanup
+run-to-run variation is recorded rather than claimed to be deterministic. Its
+cause is not fully attributed, and it is not an absolute error against ground
+truth. Runtime acceptance thresholds were not relaxed. The earlier Jammy/Focal
+cross-environment difference remains a separate comparison.
+
+Static inspection also found a pre-existing feature-mode defect: `disB` is read
+by `plane_judge` but is not initialized by `Preprocess`. The original constructor
+assigns `disA` twice; this cleanup retains its effective value of 0.1 and does not
+guess a value for `disB`. The replay configuration disables feature extraction.
+The feature-mode defect needs a separate parameter review and runtime regression;
+this stage does not claim that mode is qualified.
+
+Evidence is under the workspace's `build/source_cleanup_20261027`: core/adapter
+CTest logs, per-format comparisons, both full-route comparisons and Noetic repeat
+controls, `protected_after.json` and `result.json`. Original installations and
+navigation frozen artifacts remain unchanged. These are local maintenance
+changes, not a new robot release or a new absolute-accuracy qualification.

@@ -7,7 +7,6 @@ void Preprocess::avia_handler(const fast_lio::LivoxScan &msg)
   pl_full.clear();
   double t1 = omp_get_wtime();
   int plsize = msg.points.size();
-  // cout<<"plsie: "<<plsize<<endl;
 
   pl_corn.reserve(plsize);
   pl_surf.reserve(plsize);

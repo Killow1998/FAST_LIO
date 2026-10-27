@@ -43,7 +43,6 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
   corr_normvect->clear();
   laserCloudOri->resize(feats_down_size);
   corr_normvect->resize(feats_down_size);
-  total_residual = 0.0;
 
 /** closest surface search and residual computation **/
 #if FAST_LIO_MATCH_THREADS > 1
@@ -89,7 +88,6 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
         normvec->points[i].y = pabcd(1);
         normvec->points[i].z = pabcd(2);
         normvec->points[i].intensity = pd2;
-        res_last[i] = abs(pd2);
       }
     }
   }
@@ -100,7 +98,6 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     if (point_selected_surf[i]) {
       laserCloudOri->points[effct_feat_num] = feats_down_body->points[i];
       corr_normvect->points[effct_feat_num] = normvec->points[i];
-      total_residual += res_last[i];
       effct_feat_num++;
     }
   }
@@ -111,7 +108,6 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     return;
   }
 
-  res_mean_last = total_residual / effct_feat_num;
   match_time += omp_get_wtime() - match_start;
   double solve_start_ = omp_get_wtime();
 

@@ -4,7 +4,6 @@ int Preprocess::plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, ui
 {
   double group_dis = disA*types[i_cur].range + disB;
   group_dis = group_dis * group_dis;
-  // i_nex = i_cur;
 
   double two_dis;
   vector<double> disarr;

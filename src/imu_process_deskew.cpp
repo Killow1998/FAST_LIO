@@ -26,8 +26,6 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
   /*** sort point clouds by offset time ***/
   pcl_out = *(meas.lidar);
   sort(pcl_out.points.begin(), pcl_out.points.end(), time_list);
-  // cout<<"[ IMU Process ]: Process lidar from "<<pcl_beg_time<<" to "<<pcl_end_time<<", " \
-  //          <<meas.imu.size()<<" imu msgs from "<<imu_beg_time<<" to "<<imu_end_time<<endl;
 
   /*** Initialize IMU pose ***/
   state_ikfom imu_state = kf_state.get_x();
@@ -57,11 +55,9 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
         0.5 * (head->linear_acceleration.z() + tail->linear_acceleration.z());
 
     acc_avr = acc_avr * gravity_m_s2_ / mean_acc.norm(); // - state_inout.ba;
-    // modify by h2q use input gravity_value in yaml
 
     if (head->seconds() < last_lidar_end_time_) {
       dt = tail->seconds() - last_lidar_end_time_;
-      // dt = tail->header.stamp.toSec() - pcl_beg_time;
     } else {
       dt = tail->seconds() - head->seconds();
     }
@@ -114,7 +110,6 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
       auto head = it_kp - 1;
       auto tail = it_kp;
       R_imu << MAT_FROM_ARRAY(head->rot);
-      // cout<<"head imu acc: "<<acc_imu.transpose()<<endl;
       vel_imu << VEC_FROM_ARRAY(head->vel);
       pos_imu << VEC_FROM_ARRAY(head->pos);
       acc_imu << VEC_FROM_ARRAY(tail->acc);
@@ -173,5 +168,4 @@ void ImuProcess::Process(const MeasureGroup &meas,
 
   UndistortPcl(meas, kf_state, *cur_pcl_un_, observer);
 
-  // cout<<"[ IMU Process ]: Time: "<<t3 - t1<<endl;
 }

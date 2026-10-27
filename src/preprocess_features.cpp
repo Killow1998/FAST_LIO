@@ -22,8 +22,7 @@ void Preprocess::give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &t
   Eigen::Vector3d curr_direct(Eigen::Vector3d::Zero());
   Eigen::Vector3d last_direct(Eigen::Vector3d::Zero());
 
-  uint i_nex = 0, i2;
-  uint last_i = 0; uint last_i_nex = 0;
+  uint i_nex = 0;
   int last_state = 0;
   int plane_type;
 
@@ -33,8 +32,6 @@ void Preprocess::give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &t
     {
       continue;
     }
-
-    i2 = i;
 
     plane_type = plane_judge(pl, types, i, i_nex, curr_direct);
 
@@ -52,7 +49,6 @@ void Preprocess::give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &t
         }
       }
 
-      // if(last_state==1 && fabs(last_direct.sum())>0.5)
       if(last_state==1 && last_direct.norm()>0.1)
       {
         double mod = last_direct.transpose() * curr_direct;
@@ -69,60 +65,11 @@ void Preprocess::give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &t
       i = i_nex - 1;
       last_state = 1;
     }
-    else // if(plane_type == 2)
+    else
     {
       i = i_nex;
       last_state = 0;
     }
-    // else if(plane_type == 0)
-    // {
-    //   if(last_state == 1)
-    //   {
-    //     uint i_nex_tem;
-    //     uint j;
-    //     for(j=last_i+1; j<=last_i_nex; j++)
-    //     {
-    //       uint i_nex_tem2 = i_nex_tem;
-    //       Eigen::Vector3d curr_direct2;
-
-    //       uint ttem = plane_judge(pl, types, j, i_nex_tem, curr_direct2);
-
-    //       if(ttem != 1)
-    //       {
-    //         i_nex_tem = i_nex_tem2;
-    //         break;
-    //       }
-    //       curr_direct = curr_direct2;
-    //     }
-
-    //     if(j == last_i+1)
-    //     {
-    //       last_state = 0;
-    //     }
-    //     else
-    //     {
-    //       for(uint k=last_i_nex; k<=i_nex_tem; k++)
-    //       {
-    //         if(k != i_nex_tem)
-    //         {
-    //           types[k].ftype = Real_Plane;
-    //         }
-    //         else
-    //         {
-    //           types[k].ftype = Poss_Plane;
-    //         }
-    //       }
-    //       i = i_nex_tem-1;
-    //       i_nex = i_nex_tem;
-    //       i2 = j-1;
-    //       last_state = 1;
-    //     }
-
-    //   }
-    // }
-
-    last_i = i2;
-    last_i_nex = i_nex;
     last_direct = curr_direct;
   }
 

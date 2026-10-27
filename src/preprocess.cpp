@@ -10,8 +10,7 @@ Preprocess::Preprocess()
   N_SCANS   = 6;
   SCAN_RATE = 10;
   group_size = 8;
-  disA = 0.01;
-  disA = 0.1; // B?
+  disA = 0.1;
   p2l_ratio = 225;
   limit_maxmid =6.25;
   limit_midmin =6.25;
@@ -23,22 +22,11 @@ Preprocess::Preprocess()
   edgeb = 0.1;
   smallp_intersect = 172.5;
   smallp_ratio = 1.2;
-  given_offset_time = false;
 
   jump_up_limit = cos(jump_up_limit/180*M_PI);
   jump_down_limit = cos(jump_down_limit/180*M_PI);
   cos160 = cos(cos160/180*M_PI);
   smallp_intersect = cos(smallp_intersect/180*M_PI);
-}
-
-Preprocess::~Preprocess() {}
-
-void Preprocess::set(bool feat_en, int lid_type, double bld, int pfilt_num)
-{
-  feature_enabled = feat_en;
-  lidar_type = lid_type;
-  blind = bld;
-  point_filter_num = pfilt_num;
 }
 
 void Preprocess::process(const fast_lio::LivoxScan &msg, PointCloudXYZI::Ptr &pcl_out)

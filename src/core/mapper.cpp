@@ -43,7 +43,10 @@
 namespace fast_lio {
 Mapper::Impl::Impl(const Config &value, OdometryObserver callback)
     : config(value), observer(std::move(callback)), runtime_log(value.runtime_pos_log) {
-  preprocess.set(config.feature_enabled, config.lidar_type, config.blind, config.point_filter_num);
+  preprocess.feature_enabled = config.feature_enabled;
+  preprocess.lidar_type = config.lidar_type;
+  preprocess.blind = config.blind;
+  preprocess.point_filter_num = config.point_filter_num;
   preprocess.N_SCANS = config.scan_lines;
   preprocess.SCAN_RATE = config.scan_rate;
   preprocess.time_unit = config.time_unit;
@@ -91,7 +94,6 @@ FrameOutput Mapper::Impl::process() {
   out.diagnostic.swap(diagnostic);
   if (flg_first_scan) {
     first_lidar_time = Measures.lidar_beg_time;
-    imu.first_lidar_time = first_lidar_time;
     flg_first_scan = false;
     out.status = FrameStatus::FirstScan;
     return out;
@@ -132,8 +134,6 @@ FrameOutput Mapper::Impl::process() {
   feats_down_world->resize(feats_down_size);
   if (point_selected_surf.size() < size_t(feats_down_size))
     point_selected_surf.resize(feats_down_size, 1);
-  if (res_last.size() < size_t(feats_down_size))
-    res_last.resize(feats_down_size, -1000.f);
   Nearest_Points.resize(feats_down_size);
   double solve_H_time = 0.;
   kf.update_iterated_dyn_share_modified(.001, solve_H_time);

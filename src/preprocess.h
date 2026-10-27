@@ -85,14 +85,11 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(ouster_ros::Point,
 class Preprocess
 {
   public:
-//   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   Preprocess();
-  ~Preprocess();
   
   void process(const fast_lio::LivoxScan &msg, PointCloudXYZI::Ptr &pcl_out);
   void process(const pcl::PCLPointCloud2 &msg, PointCloudXYZI::Ptr &pcl_out);
-  void set(bool feat_en, int lid_type, double bld, int pfilt_num);
 
   PointCloudXYZI pl_full, pl_corn, pl_surf;
   PointCloudXYZI pl_buff[128]; //maximum 128 line lidar
@@ -101,7 +98,7 @@ class Preprocess
   float time_unit_scale;
   int lidar_type, point_filter_num, N_SCANS, SCAN_RATE, time_unit;
   double blind;
-  bool feature_enabled, given_offset_time;
+  bool feature_enabled;
     
 
   private:
