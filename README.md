@@ -1,3 +1,27 @@
+# FAST-LIO: shared C++ core, Noetic and Humble
+
+The `main` branch builds one C++17 estimator with two native ROS adapters.
+The stable-window IMU initialization and configurable gravity repair are shared
+by both adapters. The core uses Eigen, PCL and OpenMP; it has no ROS dependency.
+
+- `include/fast_lio/`: public configuration, sensor/output types and `Mapper` API.
+- `src/core/`: per-instance input synchronization, registration, local map and outputs.
+- `src/imu_process_*.cpp`, `src/preprocess*.cpp`: shared initialization and deskew/preprocessing.
+- `adapters/`: one parameter catalog and message conversion helpers.
+- `noetic/`, `humble/`: native package discovery, launch/config files and thin nodes.
+
+Each `Mapper` has one serial owner. Feed sensor samples, call `process()` until
+it returns `Waiting`, and call `finish()` after stopping inputs to save pending
+PCD data. An optional synchronous `OdometryObserver` receives IMU predictions
+during propagation and scan odometry immediately after correction, before map
+insertion and cloud conversion. Observers must not re-enter the mapper.
+Frame results contain immutable clouds. IMU and output pose stamps use integer
+nanoseconds; LiDAR input stamps use seconds. Topic and frame names live in the
+adapters. Filter state and the ikd-Tree remain private to each instance.
+
+See [the refactor validation record](docs/core_wrappers_20261027.md) for baseline
+identity, output comparisons, resource measurements and remaining hardware tests.
+
 ## Related Works and Extended Application
 
 **SLAM:**
@@ -23,7 +47,7 @@
 2. Automaticaly initialized at most steady environments;
 3. Parallel KD-Tree Search to decrease the computation;
 
-This ROS 2 branch vendors `ikd-Tree` directly under `include/ikd-Tree`, so cloning the repository does not require any git submodule initialization.
+This fork vendors `ikd-Tree` directly under `include/ikd-Tree`, so cloning the repository does not require any git submodule initialization.
 This fork intentionally omits the bundled `doc/` media assets to stay lightweight; the original figures, GIFs, and PDFs are referenced from the upstream repository instead.
 
 ## FAST-LIO 2.0 (2021-07-05 Update)
@@ -49,32 +73,84 @@ This fork intentionally omits the bundled `doc/` media assets to stay lightweigh
 [Wei Xu 徐威](https://github.com/XW-HKU)，[Yixi Cai 蔡逸熙](https://github.com/Ecstasy-EC)，[Dongjiao He 贺东娇](https://github.com/Joanna-HE)，[Fangcheng Zhu 朱方程](https://github.com/zfc-zfc)，[Jiarong Lin 林家荣](https://github.com/ziv-lin)，[Zheng Liu 刘政](https://github.com/Zale-Liu), [Borong Yuan](https://github.com/borongyuan)
 
 ## 1. Prerequisites
-### 1.1 **Ubuntu** and **ROS**
-**Ubuntu 22.04**
 
-ROS2 Humble. [ROS2 Installation](https://docs.ros.org/en/humble/Installation.html)
+Use Ubuntu 22.04 / ROS 2 Humble or Ubuntu 20.04 / ROS 1 Noetic, with Eigen3,
+PCL, OpenMP, CMake >= 3.16, ccache and a C++17 compiler. GTest is needed for core tests.
+Noetic can also be built in a Focal container on a Jammy host.
 
-### 1.2. **PCL && Eigen**
-Default PCL and Eigen in Ubuntu 22.04 are enough.
-
-### 1.3. **livox_ros_driver2**
-Follow [livox_ros_driver2 Installation](https://github.com/Livox-SDK/livox_ros_driver2).
-
-*Remarks:*
-- Since the FAST-LIO must support Livox serials LiDAR firstly, so the **livox_ros_driver2** must be installed and **sourced** before run any FAST-LIO launch file.
-- Source the workspace: `source install/setup.bash`
+The Livox message contract is unchanged: Humble uses
+`livox_ros_driver2/msg/CustomMsg`; Noetic uses `livox_ros_driver/CustomMsg`.
+Install and source the corresponding native driver before building the wrapper.
+The hardware driver itself is separate from this repository.
 
 ## 2. Build
-### 2.1 Build from source
-Clone the repository and colcon build:
+
+Clone the `main` branch. Both native packages retain the name `fast_lio`, so
+select one before workspace discovery. The selector only changes ignored build
+markers; both adapters remain in the same source tree. Build and install paths
+below are separate from an existing robot installation.
+
+### Humble
+
+From a colcon workspace containing this repository at `src/FAST_LIO`:
 
 ```bash
-    cd ~/$ROS2_WS/src
-    git clone -b humble https://github.com/Killow1998/FAST_LIO.git
-    cd ..
-    colcon build --symlink-install --packages-select fast_lio
-    source install/setup.bash
+source /opt/ros/humble/setup.bash
+# Source the workspace containing livox_ros_driver2.
+bash src/FAST_LIO/scripts/select_distro_wrapper.sh humble
+colcon --log-base log/fast_lio/humble-release build --packages-select fast_lio \
+  --build-base build/fast_lio/humble-release --install-base install/fast_lio/humble-release \
+  --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+source install/fast_lio/humble-release/setup.bash
+ros2 launch fast_lio mapping_mid360.launch.py
 ```
+
+### Noetic
+
+From a catkin workspace containing this repository and `livox_ros_driver`:
+
+```bash
+source /opt/ros/noetic/setup.bash
+bash src/FAST_LIO/scripts/select_distro_wrapper.sh noetic
+catkin config --profile release --build-space build/fast_lio/noetic-release \
+  --devel-space devel/fast_lio/noetic-release --install-space install/fast_lio/noetic-release \
+  --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+catkin build --profile release fast_lio -j4 -p1
+source install/fast_lio/noetic-release/setup.bash
+roslaunch fast_lio mapping_mid360.launch
+```
+
+ROS 1 parameters accept the original global namespace and private overrides.
+Configurations are under `noetic/config` and `humble/config`; installed launch
+names and topic names are retained. Root `config/` remains a symlink to `humble/config` for existing frozen startup
+commands. Native launch sources live in their wrapper directories. ROS 1 source
+configuration is always under `noetic/config`.
+
+### Core without ROS
+
+```bash
+cmake -S src/FAST_LIO/core -B build/fast_lio/core-release \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+cmake --build build/fast_lio/core-release -j4
+(cd build/fast_lio/core-release && ctest --output-on-failure)
+cmake --install build/fast_lio/core-release --prefix "$PWD/install/fast_lio/core-release"
+```
+
+A C++ consumer can use `find_package(fast_lio_core REQUIRED)` and link
+`fast_lio::fast_lio_core`. The SDK is also installed by both native wrappers.
+Only the public configuration/output headers, Eigen and PCL common are exposed;
+IKFoM, ikd-Tree, preprocessing and PCL IO/filter implementation headers remain
+internal.
+
+For development use a separate build/install directory and
+`-DCMAKE_BUILD_TYPE=RelWithDebInfo`. Optimization flags follow the selected CMake
+configuration; no unconditional `-O3` or `-march=native` is added. Set
+`CMAKE_BUILD_PARALLEL_LEVEL=4` when limiting build concurrency.
+`FAST_LIO_MATCH_THREADS` selects the point-matching workers. Its default preserves
+Humble/core's single worker and Noetic's existing CPU-dependent default (two
+workers for four visible x86 cores, three for more than four). Other OpenMP users
+in the process are not reconfigured by this matching loop.
+
 ## 3. Directly run
 Noted:
 
@@ -132,7 +208,7 @@ Connect to your PC to Livox Mid-360 LiDAR by following  [Livox-ros-driver2 insta
 
 `mapping_avia.launch.py` or `mapping_horizon.launch.py` theoretically supports mid-70, mid-40 or other livox serial LiDAR, but need to setup some parameters before run:
 
-Edit `config/avia.yaml` or `config/horizon.yaml` to set the below parameters:
+Edit `humble/config/avia.yaml` or `humble/config/horizon.yaml` to set the below parameters:
 
 1. LiDAR point cloud topic name: `lid_topic`
 2. IMU topic name: `imu_topic`
@@ -144,7 +220,7 @@ Edit `config/avia.yaml` or `config/horizon.yaml` to set the below parameters:
 
 Step A: Setup before run
 
-Edit `config/velodyne.yaml` to set the below parameters:
+Edit `humble/config/velodyne.yaml` to set the below parameters:
 
 1. LiDAR point cloud topic name: `lid_topic`
 2. IMU topic name: `imu_topic` (both internal and external, 6-aixes or 9-axies are fine)
@@ -178,7 +254,25 @@ ros2 launch fast_lio mapping_marsim.launch.py
 
 ### 3.5 PCD file save
 
-Enable `pcd_save.pcd_save_en`. In this fork, `config/mid360.yaml` enables it by default, so Mid-360 runs will accumulate global-frame scans and save them to `FAST_LIO/PCD/scans.pcd` when the node exits normally. Generated `.pcd` files are ignored by git, while the empty `PCD/` directory is kept in the repository.
+Enable `pcd_save.pcd_save_en`. In this fork, the native `config/mid360.yaml` enables it by default, so Mid-360 runs will accumulate global-frame scans and save them to `FAST_LIO/PCD/scans.pcd` when the node exits normally. Generated `.pcd` files are ignored by git, while the empty `PCD/` directory is kept in the repository.
+
+The C++ SDK can set `Config::pcd_directory` to select an output directory.
+Native wrappers retain the source-tree `PCD/` default. The previously inert ROS
+parameters `map_file_path`, `filter_size_corner` and `mapping.fov_degree` remain
+inert; this refactor does not assign them new behavior. A positive save interval
+writes numbered chunks; normal shutdown writes the remaining `scans.pcd`.
+PCD saving is owned by the core and does not require a ROS publisher.
+
+### 3.6 Optional runtime log
+
+`runtime_pos_log_enable` enables one asynchronous `runtime.log`. The writer batches
+every 250 ms, caps queued text at 1 MiB and stops appending at 100,000,000 bytes
+across restarts. Queue/storage drops and write failures are reported at shutdown.
+Set `FAST_LIO_LOG_DIR` to an instance-owned directory; otherwise the directory is
+`$HOME/.ros/fast_lio/logs`. Do not share it between simultaneous log writers.
+The default is disabled. The old unconditional source-tree `Log/` files and
+per-IMU disk writes are removed. The new row format is scan-end time, space-separated position xyz and quaternion
+xyzw, total/match/solve seconds, downsampled point count and tree size.
 
 *Tips for pcl_viewer:*
 - change what to visualize/color by pressing keyboard 1,2,3,4,5 when pcl_viewer is running. 

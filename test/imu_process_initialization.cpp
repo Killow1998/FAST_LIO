@@ -2,11 +2,9 @@
 #include <gtest/gtest.h>
 
 TEST(ImuProcessInitialization, CommitsOnlyStableInputAndHonorsConfiguredGravity) {
-  rclcpp::init(0, nullptr);
-  auto node = std::make_shared<rclcpp::Node>("imu_initialization_regression");
   for (const double gravity : {9.79338, 9.80665, 9.809}) {
     ImuProcess process;
-    process.IMUstateInit(node, "world", "body", "/test/imu_odometry", gravity);
+    process.setGravity(gravity);
     process.set_acc_cov(V3D::Constant(.1));
     process.set_gyr_cov(V3D::Constant(.1));
     esekfom::esekf<state_ikfom, 12, input_ikfom> filter;
@@ -14,17 +12,18 @@ TEST(ImuProcessInitialization, CommitsOnlyStableInputAndHonorsConfiguredGravity)
     MeasureGroup measurements;
     const V3D acceleration(.2, -.1, .97), bias(.026, -.002, .003);
     auto sample = [&](int i) {
-      auto imu = std::make_shared<sensor_msgs::msg::Imu>();
-      imu->header.stamp = rclcpp::Time(int64_t(i) * 5000000);
-      imu->linear_acceleration.x = acceleration.x();
-      imu->linear_acceleration.y = acceleration.y();
-      imu->linear_acceleration.z = acceleration.z();
-      imu->angular_velocity.x = bias.x();
-      imu->angular_velocity.y = bias.y();
-      imu->angular_velocity.z = bias.z();
+      auto imu = std::make_shared<fast_lio::ImuSample>();
+      imu->stamp_ns = int64_t(i) * 5000000;
+      imu->linear_acceleration.x() = acceleration.x();
+      imu->linear_acceleration.y() = acceleration.y();
+      imu->linear_acceleration.z() = acceleration.z();
+      imu->angular_velocity.x() = bias.x();
+      imu->angular_velocity.y() = bias.y();
+      imu->angular_velocity.z() = bias.z();
       measurements.imu.push_back(imu);
     };
-    for (int i = 0; i < 20; ++i) sample(i);
+    for (int i = 0; i < 20; ++i)
+      sample(i);
     measurements.lidar_end_time = .095;
     output->resize(1);
     process.Process(measurements, filter, output);
@@ -34,7 +33,8 @@ TEST(ImuProcessInitialization, CommitsOnlyStableInputAndHonorsConfiguredGravity)
     measurements.imu.clear();
     measurements.lidar_beg_time = .1;
     measurements.lidar_end_time = 1.;
-    for (int i = 20; i <= 200; ++i) sample(i);
+    for (int i = 20; i <= 200; ++i)
+      sample(i);
     process.Process(measurements, filter, output);
     auto state = filter.get_x();
     EXPECT_TRUE(output->empty());
@@ -49,6 +49,4 @@ TEST(ImuProcessInitialization, CommitsOnlyStableInputAndHonorsConfiguredGravity)
     state.boxplus(update);
     EXPECT_NEAR(state.grav.vec.norm(), gravity, 1e-12);
   }
-  node.reset();
-  rclcpp::shutdown();
 }

@@ -5,7 +5,7 @@
 
 typedef MTK::vect<3, double> vect3;
 typedef MTK::SO3<double> SO3;
-typedef MTK::S2<double, 98090, 10000, 1> S2; 
+typedef MTK::S2<double, 98090, 10000, 1> S2;
 typedef MTK::vect<1, double> vect1;
 typedef MTK::vect<2, double> vect2;
 
@@ -32,7 +32,7 @@ MTK_BUILD_MANIFOLD(process_noise_ikfom,
 ((vect3, nba))
 );
 
-MTK::get_cov<process_noise_ikfom>::type process_noise_cov()
+inline MTK::get_cov<process_noise_ikfom>::type process_noise_cov()
 {
 	MTK::get_cov<process_noise_ikfom>::type cov = MTK::get_cov<process_noise_ikfom>::type::Zero();
 	MTK::setDiagonal<process_noise_ikfom, vect3, 0>(cov, &process_noise_ikfom::ng, 0.0001);// 0.03
@@ -42,23 +42,23 @@ MTK::get_cov<process_noise_ikfom>::type process_noise_cov()
 	return cov;
 }
 
-//double L_offset_to_I[3] = {0.04165, 0.02326, -0.0284}; // Avia 
+//double L_offset_to_I[3] = {0.04165, 0.02326, -0.0284}; // Avia
 //vect3 Lidar_offset_to_IMU(L_offset_to_I, 3);
-Eigen::Matrix<double, 24, 1> get_f(state_ikfom &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 24, 1> get_f(state_ikfom &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 24, 1> res = Eigen::Matrix<double, 24, 1>::Zero();
 	vect3 omega;
 	in.gyro.boxminus(omega, s.bg);
-	vect3 a_inertial = s.rot * (in.acc-s.ba); 
+	vect3 a_inertial = s.rot * (in.acc-s.ba);
 	for(int i = 0; i < 3; i++ ){
 		res(i) = s.vel[i];
-		res(i + 3) =  omega[i]; 
-		res(i + 12) = a_inertial[i] + s.grav[i]; 
+		res(i + 3) =  omega[i];
+		res(i + 12) = a_inertial[i] + s.grav[i];
 	}
 	return res;
 }
 
-Eigen::Matrix<double, 24, 23> df_dx(state_ikfom &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 24, 23> df_dx(state_ikfom &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 24, 23> cov = Eigen::Matrix<double, 24, 23>::Zero();
 	cov.template block<3, 3>(0, 12) = Eigen::Matrix3d::Identity();
@@ -71,13 +71,13 @@ Eigen::Matrix<double, 24, 23> df_dx(state_ikfom &s, const input_ikfom &in)
 	Eigen::Matrix<state_ikfom::scalar, 2, 1> vec = Eigen::Matrix<state_ikfom::scalar, 2, 1>::Zero();
 	Eigen::Matrix<state_ikfom::scalar, 3, 2> grav_matrix;
 	s.S2_Mx(grav_matrix, vec, 21);
-	cov.template block<3, 2>(12, 21) =  grav_matrix; 
-	cov.template block<3, 3>(3, 15) = -Eigen::Matrix3d::Identity(); 
+	cov.template block<3, 2>(12, 21) =  grav_matrix;
+	cov.template block<3, 3>(3, 15) = -Eigen::Matrix3d::Identity();
 	return cov;
 }
 
 
-Eigen::Matrix<double, 24, 12> df_dw(state_ikfom &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 24, 12> df_dw(state_ikfom &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 24, 12> cov = Eigen::Matrix<double, 24, 12>::Zero();
 	cov.template block<3, 3>(12, 3) = -s.rot.toRotationMatrix();
@@ -87,7 +87,7 @@ Eigen::Matrix<double, 24, 12> df_dw(state_ikfom &s, const input_ikfom &in)
 	return cov;
 }
 
-vect3 SO3ToEuler(const SO3 &orient) 
+inline vect3 SO3ToEuler(const SO3 &orient)
 {
 	Eigen::Matrix<double, 3, 1> _ang;
 	Eigen::Vector4d q_data = orient.coeffs().transpose();
@@ -100,7 +100,7 @@ vect3 SO3ToEuler(const SO3 &orient)
 	double test = q_data[3]*q_data[1] - q_data[2]*q_data[0];
 
 	if (test > 0.49999*unit) { // singularity at north pole
-	
+
 		_ang << 2 * std::atan2(q_data[0], q_data[3]), M_PI/2, 0;
 		double temp[3] = {_ang[0] * 57.3, _ang[1] * 57.3, _ang[2] * 57.3};
 		vect3 euler_ang(temp, 3);
@@ -112,7 +112,7 @@ vect3 SO3ToEuler(const SO3 &orient)
 		vect3 euler_ang(temp, 3);
 		return euler_ang;
 	}
-		
+
 	_ang <<
 			std::atan2(2*q_data[0]*q_data[3]+2*q_data[1]*q_data[2] , -sqx - sqy + sqz + sqw),
 			std::asin (2*test/unit),

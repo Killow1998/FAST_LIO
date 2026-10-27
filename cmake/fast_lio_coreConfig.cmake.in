@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+find_dependency(Eigen3)
+find_dependency(PCL COMPONENTS common)
+include("${CMAKE_CURRENT_LIST_DIR}/fast_lio_coreTargets.cmake")

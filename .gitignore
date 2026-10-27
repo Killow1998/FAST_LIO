@@ -6,3 +6,8 @@ Log/*.pdf
 .vscode/c_cpp_properties.json
 .vscode/settings.json
 PCD/*.pcd
+
+# Generated native wrapper selection
+/noetic/COLCON_IGNORE
+/noetic/AMENT_IGNORE
+/humble/CATKIN_IGNORE

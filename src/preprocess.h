@@ -1,11 +1,10 @@
 #ifndef PREPROCESS_H
 #define PREPROCESS_H
 
-#include <rclcpp/rclcpp.hpp>
-#include <pcl_conversions/pcl_conversions.h>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <livox_ros_driver2/msg/custom_msg.hpp>
 #include <omp.h>
+#include <fast_lio/types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/conversions.h>
 
 using namespace std;
 
@@ -91,11 +90,10 @@ class Preprocess
   Preprocess();
   ~Preprocess();
   
-  void process(const livox_ros_driver2::msg::CustomMsg::ConstSharedPtr &msg, PointCloudXYZI::Ptr &pcl_out);
-  void process(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg, PointCloudXYZI::Ptr &pcl_out);
+  void process(const fast_lio::LivoxScan &msg, PointCloudXYZI::Ptr &pcl_out);
+  void process(const pcl::PCLPointCloud2 &msg, PointCloudXYZI::Ptr &pcl_out);
   void set(bool feat_en, int lid_type, double bld, int pfilt_num);
 
-  // sensor_msgs::PointCloud2::ConstPtr pointcloud;
   PointCloudXYZI pl_full, pl_corn, pl_surf;
   PointCloudXYZI pl_buff[128]; //maximum 128 line lidar
   
@@ -104,16 +102,14 @@ class Preprocess
   int lidar_type, point_filter_num, N_SCANS, SCAN_RATE, time_unit;
   double blind;
   bool feature_enabled, given_offset_time;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_full, pub_surf, pub_corn;
     
 
   private:
-  void avia_handler(const livox_ros_driver2::msg::CustomMsg::ConstSharedPtr &msg);
-  void oust64_handler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
-  void velodyne_handler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
-  void sim_handler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg);
+  void avia_handler(const fast_lio::LivoxScan &msg);
+  void oust64_handler(const pcl::PCLPointCloud2 &msg);
+  void velodyne_handler(const pcl::PCLPointCloud2 &msg);
+  void sim_handler(const pcl::PCLPointCloud2 &msg);
   void give_feature(PointCloudXYZI &pl, vector<orgtype> &types);
-  void pub_func(PointCloudXYZI &pl, const rclcpp::Time &ct);
   int  plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, uint i, uint &i_nex, Eigen::Vector3d &curr_direct);
   bool small_plane(const PointCloudXYZI &pl, vector<orgtype> &types, uint i_cur, uint &i_nex, Eigen::Vector3d &curr_direct);
   bool edge_jump_judge(const PointCloudXYZI &pl, vector<orgtype> &types, uint i, Surround nor_dir);
