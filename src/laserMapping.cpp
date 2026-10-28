@@ -108,6 +108,7 @@ int iterCount = 0, feats_down_size = 0, NUM_MAX_ITERATIONS = 0,
 vector<unsigned char> point_selected_surf(100000, 1);
 bool lidar_pushed, flg_first_scan = true, flg_exit = false, flg_EKF_inited;
 bool scan_pub_en = false, dense_pub_en = false, scan_body_pub_en = false;
+bool tf_pub_en = true;
 int lidar_type;
 
 vector<vector<int>> pointSearchInd_surf;
@@ -661,7 +662,7 @@ void publish_odometry(const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPt
   transform.transform.translation.y = odomAftMapped.pose.pose.position.y;
   transform.transform.translation.z = odomAftMapped.pose.pose.position.z;
   transform.transform.rotation = odomAftMapped.pose.pose.orientation;
-  if (br && ros_is_active()) {
+  if (tf_pub_en && br && ros_is_active()) {
     br->sendTransform(transform);
   }
 }
@@ -831,6 +832,8 @@ int main(int argc, char **argv) {
 
   nh->declare_parameter<bool>("publish.path_en", true);
   nh->get_parameter("publish.path_en", path_en);
+  nh->declare_parameter<bool>("publish.tf_en", true);
+  nh->get_parameter("publish.tf_en", tf_pub_en);
   nh->declare_parameter<bool>("publish.scan_publish_en", true);
   nh->get_parameter("publish.scan_publish_en", scan_pub_en);
   nh->declare_parameter<bool>("publish.dense_publish_en", true);
