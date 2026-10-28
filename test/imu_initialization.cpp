@@ -1,5 +1,6 @@
 #include "imu_initialization.h"
 #include <gtest/gtest.h>
+#include <Eigen/Geometry>
 #include <limits>
 
 using fast_lio::ImuInitializationWindow;
@@ -93,4 +94,52 @@ TEST(ImuInitialization, BoundedStorageDoesNotBypassTimeRequirement) {
     window.add(i * .00001, Vector3d(0, 0, 1), Vector3d::Zero());
   EXPECT_LE(window.estimate().samples, 2048u);
   EXPECT_FALSE(window.estimate().ready);
+}
+
+TEST(ImuInitialization, AdaptsToMeanPrecisionInsteadOfRawAccelerationNoise) {
+  ImuInitializationWindow dense, sparse;
+  const auto acceleration = [](int i) {
+    return Vector3d(.02 * (i % 2 ? 1 : -1), .02 * (i % 4 < 2 ? 1 : -1),
+                    1. + .02 * (i % 8 < 4 ? 1 : -1));
+  };
+  for (int i = 0; i <= 200; ++i)
+    dense.add(i / 200., acceleration(i), Vector3d(.01, .002, -.003));
+  for (int i = 0; i <= 20; ++i)
+    sparse.add(i / 20., acceleration(i), Vector3d(.01, .002, -.003));
+  EXPECT_GT(dense.estimate().acceleration_std_g, .03);
+  EXPECT_TRUE(dense.estimate().ready);
+  EXPECT_FALSE(sparse.estimate().ready);
+  EXPECT_GT(sparse.estimate().acceleration_mean_std_g,
+            ImuInitializationWindow::kMaxAccelerationMeanStdG);
+}
+
+TEST(ImuInitialization, CorrelatedVariationDoesNotBecomeIndependentEvidence) {
+  ImuInitializationWindow window;
+  for (int i = 0; i <= 1000; ++i)
+    window.add(i * .001, Vector3d(i / 250 % 2 ? .0045 : -.0045, 0, 1),
+               Vector3d::Zero());
+  const auto result = window.estimate();
+  EXPECT_LT(result.acceleration_std_g / std::sqrt(result.samples), .001);
+  EXPECT_LT(result.acceleration_mean_change_g,
+            ImuInitializationWindow::kMaxAccelerationMeanChangeG);
+  EXPECT_GT(result.acceleration_mean_std_g,
+            ImuInitializationWindow::kMaxAccelerationMeanStdG);
+  EXPECT_FALSE(result.ready);
+}
+
+TEST(ImuInitialization, PrecisionAndDecisionAreInvariantToMountingRotation) {
+  ImuInitializationWindow original, rotated;
+  const auto rotation = Eigen::AngleAxisd(.7, Vector3d(1, 2, 3).normalized()).toRotationMatrix();
+  for (int i = 0; i <= 200; ++i) {
+    const Vector3d a(.2 + .022 * (i % 2 ? 1 : -1), -.1, .97);
+    const Vector3d w(.026, .002, -.003);
+    original.add(i * .005, a, w);
+    rotated.add(i * .005, rotation * a, rotation * w);
+  }
+  ASSERT_TRUE(original.estimate().ready);
+  ASSERT_TRUE(rotated.estimate().ready);
+  EXPECT_NEAR(original.estimate().acceleration_mean_std_g,
+              rotated.estimate().acceleration_mean_std_g, 1e-12);
+  EXPECT_NEAR(original.estimate().gravityDirectionVariance(),
+              rotated.estimate().gravityDirectionVariance(), 1e-12);
 }

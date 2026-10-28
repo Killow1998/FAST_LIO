@@ -68,11 +68,13 @@ bool ImuProcess::IMU_init(
                     "IMU initialization waiting: samples=%zu window_s=%.3f "
                     "acc_std_g=%.6f "
                     "gyro_rms_rad_s=%.6f acc_mean_change_g=%.6f "
-                    "gyro_mean_change_rad_s=%.6f",
+                    "gyro_mean_change_rad_s=%.6f "
+                    "acc_mean_std_g=%.6f gyro_mean_std_rad_s=%.6f",
                     estimate.samples, estimate.duration_s,
                     estimate.acceleration_std_g, estimate.angular_rate_rms,
                     estimate.acceleration_mean_change_g,
-                    estimate.angular_rate_mean_change);
+                    estimate.angular_rate_mean_change,
+                    estimate.acceleration_mean_std_g, estimate.angular_rate_mean_std);
       report = message;
       initialization_report_time_ = meas.lidar_end_time;
       ++initialization_reports_;
@@ -116,10 +118,10 @@ bool ImuProcess::IMU_init(
   std::snprintf(message, sizeof(message),
                 "IMU Initial Done: samples=%zu window_s=%.3f acc_std_g=%.6f "
                 "gyro_rms_rad_s=%.6f "
-                "grav_dir_var=%.3e",
+                "grav_dir_var=%.3e acc_mean_std_g=%.6f gyro_mean_std_rad_s=%.6f",
                 estimate.samples, estimate.duration_s,
                 estimate.acceleration_std_g, estimate.angular_rate_rms,
-                init_P(21, 21));
+                init_P(21, 21), estimate.acceleration_mean_std_g, estimate.angular_rate_mean_std);
   report = message;
   kf_state.change_P(init_P);
   last_imu_ = meas.imu.back();
