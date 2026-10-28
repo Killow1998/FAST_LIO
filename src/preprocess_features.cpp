@@ -1,20 +1,40 @@
 #include "preprocess.h"
 
+void Preprocess::extractFeatures()
+{
+  const bool livox = lidar_type == AVIA;
+  for (int line = 0; line < N_SCANS; ++line) {
+    auto &points = pl_buff[line];
+    if (points.size() < (livox ? 6u : 2u)) continue;
+    auto &types = typess[line];
+    types.clear();
+    types.resize(points.size());
+    for (size_t i = 0; i < points.size(); ++i) {
+      types[i].range = std::sqrt(points[i].x * points[i].x + points[i].y * points[i].y);
+      if (i + 1 < points.size()) {
+        const double dx = points[i].x - points[i + 1].x;
+        const double dy = points[i].y - points[i + 1].y;
+        const double dz = points[i].z - points[i + 1].z;
+        const double squared = dx * dx + dy * dy + dz * dz;
+        // Preserve Livox's linear-spacing convention and rotating sensors' squared spacing.
+        types[i].dista = livox ? std::sqrt(squared) : squared;
+      }
+    }
+    give_feature(points, types);
+  }
+}
+
 void Preprocess::give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &types)
 {
   int plsize = pl.size();
   int plsize2;
-  if(plsize == 0)
-  {
-    printf("something wrong\n");
-    return;
-  }
   uint head = 0;
 
-  while(types[head].range < blind)
+  while(head < pl.size() && types[head].range < blind)
   {
     head++;
   }
+  if (head == pl.size()) return;
 
   // Surf
   plsize2 = (plsize > group_size) ? (plsize - group_size) : 0;
@@ -124,7 +144,8 @@ void Preprocess::give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &t
       }
     }
 
-    types[i].intersect = vecs[Prev].dot(vecs[Next]) / vecs[Prev].norm() / vecs[Next].norm();
+    if (types[i-1].range >= blind && types[i+1].range >= blind)
+      types[i].intersect = vecs[Prev].dot(vecs[Next]) / vecs[Prev].norm() / vecs[Next].norm();
     if(types[i].edj[Prev]==Nr_nor && types[i].edj[Next]==Nr_zero && types[i].dista>0.0225 && types[i].dista>4*types[i-1].dista)
     {
       if(types[i].intersect > cos160)

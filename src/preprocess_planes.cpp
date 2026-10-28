@@ -21,7 +21,10 @@ int Preprocess::plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, ui
 
   for(;;)
   {
-    if((i_cur >= pl.size()) || (i_nex >= pl.size())) break;
+    if(i_nex >= pl.size()) {
+      curr_direct.setZero();
+      return 0;
+    }
 
     if(types[i_nex].range < blind)
     {
@@ -36,7 +39,7 @@ int Preprocess::plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, ui
     {
       break;
     }
-    disarr.push_back(types[i_nex].dista);
+    if (i_nex + 1 < pl.size()) disarr.push_back(types[i_nex].dista);
     i_nex++;
   }
 

@@ -1,4 +1,4 @@
-foreach(name imu_initialization imu_process_initialization core_pipeline)
+foreach(name imu_initialization imu_process_initialization core_pipeline feature_preprocess)
   set(sources ${FAST_LIO_ROOT}/test/${name}.cpp ${FAST_LIO_ROOT}/test/main.cpp)
   if(COMMAND ament_add_gtest)
     ament_add_gtest(test_${name} ${sources} SKIP_LINKING_MAIN_LIBRARIES)

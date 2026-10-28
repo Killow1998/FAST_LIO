@@ -40,6 +40,7 @@ void Preprocess::avia_handler(const fast_lio::LivoxScan &msg)
         }
       }
     }
+    extractFeatures();
   }
   else
   {

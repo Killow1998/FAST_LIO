@@ -146,8 +146,8 @@ CTest 3.16 must be run from the test directory: newer `--test-dir` syntax can yi
 
 Hardware capture, the live Livox SDK/driver chain, ARM deployment and long-duration
 resource use were not qualified here. Noetic E2E uses generated messages matching
-the official ROS 1 Livox schema, not a running hardware driver. Rotating-LiDAR
-checks use synthetic motion and do not replace real-device or feature-mode tests.
+the official ROS 1 Livox schema, not a running hardware driver. Sensor-format and optional feature checks use synthetic motion; they do not
+replace real-device qualification.
 The comparison establishes behavior relative to the repaired frontend; it is not
 an absolute 10 cm accuracy acceptance test.
 
@@ -196,11 +196,81 @@ Static inspection also found a pre-existing feature-mode defect: `disB` is read
 by `plane_judge` but is not initialized by `Preprocess`. The original constructor
 assigns `disA` twice; this cleanup retains its effective value of 0.1 and does not
 guess a value for `disB`. The replay configuration disables feature extraction.
-The feature-mode defect needs a separate parameter review and runtime regression;
-this stage does not claim that mode is qualified.
+That cleanup did not qualify feature mode. The subsequent repair and its
+separate parameter review are recorded below.
 
 Evidence is under the workspace's `build/source_cleanup_20261027`: core/adapter
 CTest logs, per-format comparisons, both full-route comparisons and Noetic repeat
 controls, `protected_after.json` and `result.json`. Original installations and
 navigation frozen artifacts remain unchanged. These are local maintenance
 changes, not a new robot release or a new absolute-accuracy qualification.
+
+## Feature preprocessing repair after `f6bd468`
+
+`disA` and `disB` define the candidate scan-line group span:
+`L(r) = 0.01 * r + 0.1 m`, where this implementation uses horizontal range
+`r = sqrt(x*x + y*y)`. After collecting the minimum eight points, `plane_judge`
+extends the group to this span and compares squared distances with `L(r)^2`.
+These are grouping parameters, not registration acceptance thresholds.
+The values come from the [original upstream feature extractor](https://github.com/hku-mars/FAST_LIO/blob/6e1fa94351316eafac5fcf55c5fcd575f3e89829/src/feature_extract.cpp#L75-L76).
+The constructor now initializes both values. Merely adding `disB = 0.1` while
+retaining the overwritten `disA = 0.1` would not restore the historical pair.
+
+The feature-enabled replay also exposed an omission in the `3d1b6d1` core
+extraction: Livox filled its ring buffers but never processed them. The missing
+call is restored. Livox, Ouster and Velodyne now share ring metadata construction;
+Livox keeps its original linear neighbour spacing, and rotating sensors keep
+squared spacing. Other feature constants and the default `feature_extract_enable:
+false` are unchanged. Runtime thresholds, public interfaces and ROS adapters do
+not change.
+
+The old binary fails the new output/storage-independence checks and crashes on
+an empty Ouster ring. After restoring Livox processing, AddressSanitizer also
+reproduced out-of-bounds reads for an all-blind ring and a dense scan tail.
+The repair skips insufficient rings, bounds the blind-prefix scan, rejects an
+incomplete group at the ring end, and avoids reading a nonexistent final edge.
+An intersection angle is computed only when both neighbour directions were
+computed. These address observed failures and a directly traced uninitialized
+read; no new lock, exception, retry or speculative fallback was introduced.
+Shared production preprocessing is nine lines shorter overall.
+
+Four-core validation (`0,2,4,6`, Release, ccache) passes:
+
+- Standalone core, Humble and native Noetic: 4/4 CTest targets each.
+- Six focused feature cases pass AddressSanitizer and UndefinedBehaviorSanitizer.
+  The cases exercise poisoned object storage, sparse/empty/all-blind rings and
+  dense scan tails through the real preprocessing entry points.
+- Both native wrappers pass Livox, Velodyne and Ouster feature-enabled moving-room
+  E2E: all 71 scans acknowledged and all 58 expected mapped frames emitted.
+  Maximum position error is 7.17 mm and maximum orientation error is 0.05575 deg,
+  against fixed analytic truth, without trajectory alignment. Gates remain
+  1 cm and 0.1 deg. This is a 32-ring synthetic fixture, not hardware acceptance.
+- Default feature-disabled mode: all four sensor formats and the complete
+  171-second input match each platform's frozen `f6bd468` outputs exactly,
+  including scan/IMU poses, TF, gravity, body-cloud fields, timestamps and counts.
+  Each full replay consumes 1,710 scans and 34,215 IMU samples and emits 1,692
+  mapped frames. Noetic compares against the recorded clean repeat from the
+  prior cleanup, with no repeat needed in this repair run.
+
+The initial four-ring room fixture fails the 0.1-deg gate: repaired feature mode
+reaches 0.424 deg, and the frozen pre-repair **raw-point mode** also reaches
+0.505 deg. Its median five-neighbour covariance eigenvalue ratio
+`lambda_second / lambda_largest` is approximately 0.000107, versus 0.445 for the
+32-ring feature fixture; local neighbourhoods are nearly collinear. Both failed
+runs and their geometry audit are retained. Increasing the fixture's angular
+sampling coverage does not establish that the estimator solves sparse geometric
+degeneracy. No production parameter was tuned to pass this test.
+
+Single 2x replay measurements are 21.19 CPU-seconds / 245.4 MiB peak RSS on
+Humble, and 22.00 CPU-seconds / 164.5 MiB on Noetic. Mean process CPU is 0.245 and
+0.254 cores over approximately 86.54 wall-seconds. These measurements are not a
+performance improvement claim or a long-duration resource qualification.
+
+Evidence is in `build/fast_lio/feature_init_20261027` under the workspace:
+`historical_parameters.txt`, `baseline_regressions.json`, sanitizer logs,
+`fixture_geometry.json`, the three CTest logs, native replay comparisons and
+`result.json`. The latter records source/build identities and protected artifact
+hashes. Noetic uses the official-schema Livox message fixture in its native ROS 1
+environment. Original installations, navigation frozen artifacts, N3M code and
+the user's pending Log deletions remain unchanged. The next deployment check is
+hardware capture with the selected sensor; default feature extraction remains off.

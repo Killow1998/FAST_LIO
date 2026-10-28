@@ -106,6 +106,7 @@ class Preprocess
   void oust64_handler(const pcl::PCLPointCloud2 &msg);
   void velodyne_handler(const pcl::PCLPointCloud2 &msg);
   void sim_handler(const pcl::PCLPointCloud2 &msg);
+  void extractFeatures();
   void give_feature(PointCloudXYZI &pl, vector<orgtype> &types);
   int  plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, uint i, uint &i_nex, Eigen::Vector3d &curr_direct);
   bool small_plane(const PointCloudXYZI &pl, vector<orgtype> &types, uint i_cur, uint &i_nex, Eigen::Vector3d &curr_direct);

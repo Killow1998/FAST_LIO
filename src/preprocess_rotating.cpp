@@ -37,25 +37,7 @@ void Preprocess::oust64_handler(const pcl::PCLPointCloud2 &msg)
       }
     }
 
-    for (int j = 0; j < N_SCANS; j++)
-    {
-      PointCloudXYZI &pl = pl_buff[j];
-      int linesize = pl.size();
-      vector<orgtype> &types = typess[j];
-      types.clear();
-      types.resize(linesize);
-      linesize--;
-      for (uint i = 0; i < linesize; i++)
-      {
-        types[i].range = sqrt(pl[i].x * pl[i].x + pl[i].y * pl[i].y);
-        vx = pl[i].x - pl[i + 1].x;
-        vy = pl[i].y - pl[i + 1].y;
-        vz = pl[i].z - pl[i + 1].z;
-        types[i].dista = vx * vx + vy * vy + vz * vz;
-      }
-      types[linesize].range = sqrt(pl[linesize].x * pl[linesize].x + pl[linesize].y * pl[linesize].y);
-      give_feature(pl, types);
-    }
+    extractFeatures();
   }
   else
   {
@@ -153,26 +135,7 @@ void Preprocess::velodyne_handler(const pcl::PCLPointCloud2 &msg)
         pl_buff[layer].points.push_back(added_pt);
       }
 
-      for (int j = 0; j < N_SCANS; j++)
-      {
-        PointCloudXYZI &pl = pl_buff[j];
-        int linesize = pl.size();
-        if (linesize < 2) continue;
-        vector<orgtype> &types = typess[j];
-        types.clear();
-        types.resize(linesize);
-        linesize--;
-        for (uint i = 0; i < linesize; i++)
-        {
-          types[i].range = sqrt(pl[i].x * pl[i].x + pl[i].y * pl[i].y);
-          vx = pl[i].x - pl[i + 1].x;
-          vy = pl[i].y - pl[i + 1].y;
-          vz = pl[i].z - pl[i + 1].z;
-          types[i].dista = vx * vx + vy * vy + vz * vz;
-        }
-        types[linesize].range = sqrt(pl[linesize].x * pl[linesize].x + pl[linesize].y * pl[linesize].y);
-        give_feature(pl, types);
-      }
+      extractFeatures();
     }
     else
     {

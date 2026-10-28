@@ -16,7 +16,7 @@ import numpy as np
 import yaml
 
 
-def records(path):
+def records(path, features=False):
     if path:
         with path.open('rb') as stream:
             assert stream.read(8) == b'FLIO1\0\0\0'
@@ -44,12 +44,25 @@ def records(path):
             elapsed = max(0., seconds - 1.5)
             position = .05 * elapsed**2 if elapsed <= 1. else .05 + .1 * (elapsed - 1.)
             points = []
-            for i in range(9):
-                for j in range(9):
-                    for x, y, z in ((1.+i*.2-position, -1.+j*.2, -1.),
-                                    (3.-position, -1.+i*.2, -1.+j*.2),
-                                    (1.+i*.2-position, 2., -1.+j*.2)):
-                        points.append(struct.pack('<IfffBBB', 0, x, y, z, 10, 0x10, 0))
+            if features:
+                for line, pitch_deg in enumerate(range(-31, 32, 2)):
+                    pitch = math.radians(pitch_deg)
+                    for bearing in range(0, 360, 2):
+                        yaw = math.radians(bearing)
+                        ray = (math.cos(pitch)*math.cos(yaw), math.cos(pitch)*math.sin(yaw), math.sin(pitch))
+                        distances = [(bound-origin)/direction
+                                     for origin, direction, bounds in zip((position, 0., 0.), ray, ((-5., 5.), (-4., 4.), (-1., 2.)))
+                                     for bound in bounds if abs(direction) > 1e-12 and (bound-origin)/direction > 0]
+                        distance = min(distances)
+                        x, y, z = (distance*direction for direction in ray)
+                        points.append(struct.pack('<IfffBBB', 0, x, y, z, 10, 0x10, line))
+            else:
+                for i in range(9):
+                    for j in range(9):
+                        for x, y, z in ((1.+i*.2-position, -1.+j*.2, -1.),
+                                        (3.-position, -1.+i*.2, -1.+j*.2),
+                                        (1.+i*.2-position, 2., -1.+j*.2)):
+                            points.append(struct.pack('<IfffBBB', 0, x, y, z, 10, 0x10, 0))
             yield b'L', stamp, b''.join(points)
 
 
@@ -130,17 +143,24 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--input', type=Path)
     parser.add_argument('--config', type=Path)
+    parser.add_argument('--feature-extraction', action='store_true',
+                        help='Enable scan-line features for Livox, Velodyne or Ouster')
     parser.add_argument('--rate', type=float, default=2.)
     parser.add_argument('--lidar-type', type=int, choices=[1,2,3,4], default=1)
     args = parser.parse_args()
     if args.input and args.lidar_type != 1:
         parser.error('Recorded inputs retain their original Livox format')
+    if args.feature_extraction and args.lidar_type == 4:
+        parser.error('Marsim does not implement scan-line feature extraction')
     args.output.mkdir(parents=True, exist_ok=False)
     config = yaml.safe_load(args.config.read_text())['laserMapping']['ros__parameters'] if args.config else {
         'common': {'gravity_m_s2': 9.81}, 'mapping': {'extrinsic_T': [0.,0.,0.], 'extrinsic_R': [1.,0.,0.,0.,1.,0.,0.,0.,1.], 'extrinsic_est_en': False},
         'preprocess': {'lidar_type': 1, 'scan_line': 1, 'blind': .01}}
     config.update(filter_size_surf=.1, filter_size_map=.1, point_filter_num=2 if args.input else 1,
                   max_iteration=4, runtime_pos_log_enable=False)
+    config['feature_extract_enable'] = args.feature_extraction
+    if args.feature_extraction and not args.input:
+        config.setdefault('preprocess', {})['scan_line'] = 32
     config.setdefault("cube_side_length", 1000.)
     config.setdefault("preprocess", {})["lidar_type"] = args.lidar_type
     if args.lidar_type in (2,3):
@@ -255,7 +275,7 @@ def main():
         start = time.monotonic()
         first_stamp = None
         progress_stamp = 0
-        for kind, stamp, data in records(args.input):
+        for kind, stamp, data in records(args.input, args.feature_extraction):
             if first_stamp is None:
                 first_stamp = stamp
             progress_stamp = max(progress_stamp,stamp)
@@ -318,7 +338,7 @@ def main():
         assert counts['ack']==sent['lidar'], (sent,counts)
         assert counts['odom']==counts['body']==counts['world']==counts['gravity']==counts['tf'] and counts['odom']>10, counts
         assert counts['imu_odom']>counts['odom'] and counts['path']>0, counts
-        result={'ros':args.ros,'lidar_type':args.lidar_type,'sent':sent,'received':counts,'wall_s':duration,'node_cpu_s':cpu-initial_cpu,'startup_cpu_s':initial_cpu,'mean_cores':(cpu-initial_cpu)/duration,'peak_rss_bytes':rss,'errors':errors}
+        result={'ros':args.ros,'lidar_type':args.lidar_type,'feature_extraction':args.feature_extraction,'sent':sent,'received':counts,'wall_s':duration,'node_cpu_s':cpu-initial_cpu,'startup_cpu_s':initial_cpu,'mean_cores':(cpu-initial_cpu)/duration,'peak_rss_bytes':rss,'errors':errors}
         result['body_fields']=body_fields
         result['ack_observed_latency_s']=dict(zip(('p50','p95','max'),map(float,np.percentile(ack_latencies,[50,95,100]))))
     finally:
@@ -334,6 +354,17 @@ def main():
         for f in files:
             f.close()
         stream.close()
+    if args.feature_extraction and not args.input:
+        assert counts['odom'] == 58, ('feature output coverage', counts)
+        poses = np.loadtxt(args.output/'odometry.csv', delimiter=',')
+        elapsed = np.maximum(0., poses[:,0]/1e9-1.5)
+        truth_x = np.where(elapsed <= 1., .05*elapsed**2, .05+.1*(elapsed-1.))
+        error = poses[:,1:4].copy()
+        error[:,0] -= truth_x
+        result['synthetic_position_max_m'] = float(np.linalg.norm(error, axis=1).max())
+        result['synthetic_angle_max_rad'] = float((2*np.arctan2(np.linalg.norm(poses[:,4:7], axis=1), np.abs(poses[:,7]))).max())
+        assert result['synthetic_position_max_m'] < .01, result
+        assert result['synthetic_angle_max_rad'] < math.radians(.1), result
     result['node_exit_code']=node.returncode
     assert node.returncode == 0, ('node shutdown failed', node.returncode)
     (args.output/'summary.json').write_text(json.dumps(result,indent=2)+'\n')
