@@ -143,3 +143,24 @@ TEST(ImuInitialization, PrecisionAndDecisionAreInvariantToMountingRotation) {
   EXPECT_NEAR(original.estimate().gravityDirectionVariance(),
               rotated.estimate().gravityDirectionVariance(), 1e-12);
 }
+
+TEST(ImuInitialization, AccumulatesStableNoisyInputUntilPrecisionIsSufficient) {
+  ImuInitializationWindow window;
+  for (int i = 0; i <= 200; ++i)
+    window.add(i * .005, Vector3d(.04 * (i % 2 ? 1 : -1), 0, 1), Vector3d::Zero());
+  EXPECT_FALSE(window.estimate().ready);
+  for (int i = 201; i <= 400; ++i)
+    window.add(i * .005, Vector3d(.04 * (i % 2 ? 1 : -1), 0, 1), Vector3d::Zero());
+  ASSERT_TRUE(window.estimate().ready);
+  EXPECT_GT(window.estimate().duration_s, 1.);
+}
+
+TEST(ImuInitialization, OlderStableSamplesCannotHideRecentMotion) {
+  ImuInitializationWindow window;
+  for (int i = 0; i <= 1000; ++i)
+    window.add(i * .005, Vector3d(0, 0, 1), Vector3d::Zero());
+  for (int i = 1001; i <= 1020; ++i)
+    window.add(i * .005, Vector3d(0, 0, 1), Vector3d(0, 0, .3));
+  EXPECT_FALSE(window.estimate().ready);
+  EXPECT_FALSE(window.estimate().stable);
+}

@@ -168,6 +168,12 @@ at least 20 samples. It checks both noise and changes between the two half-windo
 means before committing gravity and gyro bias. Older startup motion leaves the
 window automatically; elapsed time alone never forces acceptance.
 
+The most recent second must pass the stability checks. If it is stable but
+mean precision is insufficient, up to five seconds of retained samples may be
+used, subject to the same stability and precision checks. This extends the
+averaging time without relaxing precision or hiding recent motion. The storage
+cap remains 2048 samples; quiet input can still initialize after one second.
+
 The checks use estimated uncertainty of the acceleration and gyro means instead
 of a fixed raw acceleration-noise cutoff. Each mean variance is the larger of
 the sample variance divided by sample count and the variance of four batch

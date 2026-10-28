@@ -10,6 +10,7 @@ namespace fast_lio {
 
 struct ImuInitializationEstimate {
   bool ready = false;
+  bool stable = false;
   size_t samples = 0;
   double duration_s = 0.;
   double acceleration_std_g = 0.;
@@ -42,6 +43,7 @@ class ImuInitializationWindow {
 
 public:
   static constexpr double kDurationS = 1.;
+  static constexpr double kMaxDurationS = 5.;
   static constexpr double kMaxGapS = .1;
   // Noise and a constant gyro bias are allowed; changing means are not.
   static constexpr double kMaxAngularRateRms = .05;
@@ -69,25 +71,39 @@ public:
     }
     samples_.push_back({time, acceleration, angular_rate});
     // Keep one sample at/before the window boundary to measure its duration.
-    while (samples_.size() > 1 && samples_[1].time <= time - kDurationS)
+    while (samples_.size() > 1 && samples_[1].time <= time - kMaxDurationS)
       samples_.pop_front();
     while (samples_.size() > kMaxSamples) samples_.pop_front();
   }
 
   ImuInitializationEstimate estimate() const {
+    size_t first = 0;
+    while (first + 1 < samples_.size() &&
+           samples_[first + 1].time <= samples_.back().time - kDurationS)
+      ++first;
+    const auto recent = estimateFrom(first);
+    if (recent.ready || !recent.stable || first == 0) return recent;
+    // Longer averaging is allowed only when the latest second is stable.
+    return estimateFrom(0);
+  }
+
+private:
+  ImuInitializationEstimate estimateFrom(size_t first) const {
     ImuInitializationEstimate result;
-    result.samples = samples_.size();
-    if (samples_.size() < 2) return result;
-    result.duration_s = samples_.back().time - samples_.front().time;
+    result.samples = samples_.size() - first;
+    if (result.samples < 2) return result;
+    result.duration_s = samples_.back().time - samples_[first].time;
     double rate_squared = 0.;
-    for (const auto& sample : samples_) {
+    for (size_t i = first; i < samples_.size(); ++i) {
+      const auto& sample = samples_[i];
       result.acceleration += sample.acceleration;
       result.angular_rate += sample.angular_rate;
       rate_squared += sample.angular_rate.squaredNorm();
     }
     result.acceleration /= result.samples;
     result.angular_rate /= result.samples;
-    for (const auto& sample : samples_) {
+    for (size_t i = first; i < samples_.size(); ++i) {
+      const auto& sample = samples_[i];
       result.acceleration_variance +=
           (sample.acceleration - result.acceleration).cwiseAbs2();
       result.angular_rate_variance +=
@@ -115,8 +131,8 @@ public:
         a.setZero();
         w.setZero();
         for (size_t i = begin; i < end; ++i) {
-          a += samples_[i].acceleration;
-          w += samples_[i].angular_rate;
+          a += samples_[first + i].acceleration;
+          w += samples_[first + i].angular_rate;
         }
         a /= end - begin;
         w /= end - begin;
@@ -137,8 +153,8 @@ public:
     Eigen::Vector3d first_angular_rate = Eigen::Vector3d::Zero();
     const size_t half = result.samples / 2;
     for (size_t i = 0; i < half; ++i) {
-      first_acceleration += samples_[i].acceleration;
-      first_angular_rate += samples_[i].angular_rate;
+      first_acceleration += samples_[first + i].acceleration;
+      first_angular_rate += samples_[first + i].angular_rate;
     }
     const Eigen::Vector3d second_acceleration =
         (result.acceleration * result.samples - first_acceleration) / (result.samples - half);
@@ -148,13 +164,14 @@ public:
         (first_acceleration / half - second_acceleration).norm() / norm;
     result.angular_rate_mean_change =
         (first_angular_rate / half - second_angular_rate).norm();
-    result.ready = result.samples >= kMinSamples &&
+    result.stable = result.samples >= kMinSamples &&
                    result.duration_s + 1e-9 >= kDurationS &&
-                   result.acceleration_mean_std_g <= kMaxAccelerationMeanStdG &&
-                   result.angular_rate_mean_std <= kMaxAngularRateMeanStd &&
                    result.angular_rate_rms <= kMaxAngularRateRms &&
                    result.acceleration_mean_change_g <= kMaxAccelerationMeanChangeG &&
                    result.angular_rate_mean_change <= kMaxAngularRateMeanChange;
+    result.ready = result.stable &&
+                   result.acceleration_mean_std_g <= kMaxAccelerationMeanStdG &&
+                   result.angular_rate_mean_std <= kMaxAngularRateMeanStd;
     return result;
   }
 };
