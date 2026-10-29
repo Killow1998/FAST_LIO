@@ -168,11 +168,28 @@ at least 20 samples. It checks both noise and changes between the two half-windo
 means before committing gravity and gyro bias. Older startup motion leaves the
 window automatically; elapsed time alone never forces acceptance.
 
-The checks allow acceleration standard deviation up to 0.03 g and angular-rate
-RMS up to 0.05 rad/s. Half-window mean changes must stay within 0.005 g and
-0.01 rad/s. Acceleration statistics are normalized by the measured gravity
-magnitude, so recorded g and m/s² inputs use the same decision. These are
-stationary-start checks, not a dynamic initializer or an IMU calibration.
+The most recent second must pass the stability checks. If it is stable but
+mean precision is insufficient, up to five seconds of retained samples may be
+used, subject to the same stability and precision checks. This extends the
+averaging time without relaxing precision or hiding recent motion. The storage
+cap remains 2048 samples; quiet input can still initialize after one second.
+
+The checks use estimated uncertainty of the acceleration and gyro means instead
+of a fixed raw acceleration-noise cutoff. Each mean variance is the larger of
+the sample variance divided by sample count and the variance of four batch
+means divided by four. This retains correlated variation instead of treating
+every sample as independent evidence. Scalar variance traces preserve decisions
+under a fixed change of sensor orientation.
+
+The normalized acceleration-mean standard error must not exceed 0.0025 g, and
+the gyro-mean standard error must not exceed 0.005 rad/s. These use half the
+existing half-window stability budgets: mean changes must stay within 0.005 g
+and 0.01 rad/s. Angular-rate RMS remains limited to 0.05 rad/s. No per-sensor
+noise threshold is learned by progressively relaxing a failed check.
+Acceleration statistics are normalized by the measured gravity magnitude, so
+recorded g and m/s² inputs use the same decision. These are bounded
+stationary-start checks, not a statistical proof of rest, a dynamic initializer,
+or an IMU calibration. Four batches cannot model every noise correlation.
 Constant acceleration and sufficiently slow constant rotation cannot be
 distinguished from gravity and bias using this window alone.
 
