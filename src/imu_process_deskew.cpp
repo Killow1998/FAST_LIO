@@ -1,4 +1,5 @@
 #include "IMU_Processing.hpp"
+#include "odometry_output.h"
 #include "preprocess.h"
 #include <algorithm>
 
@@ -77,14 +78,10 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
     IMUpose.push_back(set_pose6d(offs_t, acc_s_last, angvel_last, imu_state.vel, imu_state.pos,
                                  imu_state.rot.toRotationMatrix()));
 
-    fast_lio::Odometry predicted;
-    predicted.stamp_ns = head->stamp_ns;
-    predicted.position = imu_state.pos;
-    predicted.orientation = Eigen::Quaterniond(imu_state.rot);
-    predicted.velocity = imu_state.vel;
-    predicted.angular_velocity = angvel_last;
     if (observer)
-      observer(fast_lio::OdometryKind::Imu, predicted);
+      observer(fast_lio::OdometryKind::Imu,
+               fast_lio::makeOdometry(tail->stamp_ns, imu_state, kf_state.get_P(),
+                                      tail->angular_velocity));
   }
 
   double note = pcl_end_time > imu_end_time ? 1.0 : -1.0;

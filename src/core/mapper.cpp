@@ -33,6 +33,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "mapper_impl.h"
+#include "odometry_output.h"
 #include <filesystem>
 #include <iomanip>
 #include <omp.h>
@@ -139,21 +140,10 @@ FrameOutput Mapper::Impl::process() {
   kf.update_iterated_dyn_share_modified(.001, solve_H_time);
   state_point = kf.get_x();
   pos_lid = state_point.pos + state_point.rot * state_point.offset_T_L_I;
-  out.odometry.stamp_ns = static_cast<int64_t>(lidar_end_time * 1e9);
-  out.odometry.position = state_point.pos;
-  out.odometry.orientation = Eigen::Quaterniond(state_point.rot);
-  out.odometry.velocity = state_point.vel;
-  out.odometry.angular_velocity = Measures.imu.back()->angular_velocity;
-  // Published covariance retains its existing one-scan lag.
-  out.odometry.covariance = published_covariance;
+  out.odometry = makeOdometry(static_cast<int64_t>(lidar_end_time * 1e9), state_point,
+                              kf.get_P(), Measures.imu.back()->angular_velocity);
   if (observer)
     observer(OdometryKind::Lidar, out.odometry);
-  const auto covariance = kf.get_P();
-  for (int i = 0; i < 6; ++i) {
-    const int k = i < 3 ? i + 3 : i - 3;
-    for (int j = 0; j < 6; ++j)
-      published_covariance[i * 6 + j] = covariance(k, j < 3 ? j + 3 : j - 3);
-  }
   out.gravity = state_point.grav.vec;
   map_incremental();
   if (config.scan_pub_en || config.pcd_save_en) {

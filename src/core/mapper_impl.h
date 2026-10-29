@@ -54,7 +54,6 @@ struct Mapper::Impl {
   int feats_down_size = 0, effct_feat_num = 0;
   double match_time = 0., solve_time = 0.;
   int path_frames = 0, save_frames = 0, pcd_index = 0;
-  std::array<double, 36> published_covariance{};
   std::string diagnostic;
 };
 } // namespace fast_lio

@@ -19,6 +19,11 @@ Frame results contain immutable clouds. IMU and output pose stamps use integer
 nanoseconds; LiDAR input stamps use seconds. Topic and frame names live in the
 adapters. Filter state and the ikd-Tree remain private to each instance.
 
+Odometry refers to the IMU origin. Both velocity components use the child/body
+frame; pose and pose covariance use the parent frame. See the
+[output contract](docs/core_wrappers_20261027.md#odometry-output-contract--2026-10-29)
+before configuring a downstream estimator.
+
 See [the refactor validation record](docs/core_wrappers_20261027.md) for baseline
 identity, output comparisons, resource measurements and remaining hardware tests.
 

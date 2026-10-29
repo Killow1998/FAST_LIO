@@ -88,6 +88,23 @@ fast_lio::Config config() {
   return result;
 }
 } // namespace
+TEST(CorePipeline, ImuPredictionUsesPropagationEndpointTimestamp) {
+  int64_t last_prediction = -1;
+  int scans = 0;
+  fast_lio::Mapper mapper(config(), [&](fast_lio::OdometryKind kind,
+                                const fast_lio::Odometry& odometry) {
+    if (kind == fast_lio::OdometryKind::Imu) {
+      last_prediction = odometry.stamp_ns;
+    } else {
+      // This fixture supplies an IMU sample exactly at every scan endpoint.
+      EXPECT_EQ(last_prediction, odometry.stamp_ns);
+      ++scans;
+    }
+  });
+  feed(mapper, true);
+  EXPECT_GT(scans, 10);
+}
+
 TEST(CorePipeline, MovingInstancesRemainIndependent) {
   std::vector<Record> baseline;
   {

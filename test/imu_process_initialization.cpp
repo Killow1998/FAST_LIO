@@ -1,5 +1,29 @@
 #include "IMU_Processing.hpp"
+#include "odometry_output.h"
 #include <gtest/gtest.h>
+
+TEST(OdometryOutput, UsesBodyVelocityAndCurrentParentFramePoseCovariance) {
+  state_ikfom state;
+  state.rot = Eigen::AngleAxisd(std::acos(-1.) / 2., Eigen::Vector3d::UnitZ()).toRotationMatrix();
+  state.vel = Eigen::Vector3d(1., 2., 3.);
+  state.bg = Eigen::Vector3d(.1, -.02, .01);
+  esekfom::esekf<state_ikfom, 12, input_ikfom>::cov covariance;
+  covariance.setIdentity();
+  covariance.diagonal().head<6>() << 1., 2., 3., .1, .2, .3;
+  covariance(0, 3) = covariance(3, 0) = .04;
+  covariance(1, 4) = covariance(4, 1) = .05;
+
+  const auto out = fast_lio::makeOdometry(123456, state, covariance, {.3, -.1, .05});
+  EXPECT_EQ(out.stamp_ns, 123456);
+  EXPECT_TRUE(out.velocity.isApprox(Eigen::Vector3d(2., -1., 3.), 1e-12));
+  EXPECT_TRUE(out.angular_velocity.isApprox(Eigen::Vector3d(.2, -.08, .04), 1e-12));
+  Eigen::Matrix<double, 6, 6> expected = Eigen::Matrix<double, 6, 6>::Zero();
+  expected.diagonal() << 1., 2., 3., .2, .1, .3;
+  expected(0, 4) = expected(4, 0) = .04;
+  expected(1, 3) = expected(3, 1) = -.05;
+  const Eigen::Map<const Eigen::Matrix<double, 6, 6, Eigen::RowMajor>> actual(out.covariance.data());
+  EXPECT_TRUE(actual.isApprox(expected, 1e-12));
+}
 
 TEST(ImuProcessInitialization, CommitsOnlyStableInputAndHonorsConfiguredGravity) {
   for (const double gravity : {9.79338, 9.80665, 9.809}) {

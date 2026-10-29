@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-29",
+  "baseline_commit": "783d62fdd17bec00127de6fd045daef0967f8842",
+  "scope": "Correct published FAST-LIO state time, velocity frames/bias and current pose covariance; estimator updates unchanged.",
+  "cpu_affinity": [
+    0,
+    2,
+    4,
+    6
+  ],
+  "ctest": {
+    "standalone": [
+      4,
+      4
+    ],
+    "humble": [
+      4,
+      4
+    ],
+    "noetic": [
+      4,
+      4
+    ]
+  },
+  "regression": "Old pipeline fails endpoint timestamp by 5 ms. Marked current P and rotated cross blocks verified.",
+  "truth": {
+    "humble": {
+      "alignment": "One fixed baseline-first-pose alignment, shared with candidate; no candidate fitting.",
+      "before": {
+        "poses": 1692,
+        "position_rmse_m": 0.01937947677470874,
+        "position_p95_m": 0.0254543437886334,
+        "position_max_m": 0.031196913724106923,
+        "angle_rmse_deg": 0.01797359612523758,
+        "angle_max_deg": 0.05000659747796068
+      },
+      "after": {
+        "poses": 1692,
+        "position_rmse_m": 0.01937947677470874,
+        "position_p95_m": 0.0254543437886334,
+        "position_max_m": 0.031196913724106923,
+        "angle_rmse_deg": 0.01797359612523758,
+        "angle_max_deg": 0.05000659747796068
+      }
+    },
+    "noetic": {
+      "alignment": "One fixed baseline-first-pose alignment, shared with candidate; no candidate fitting.",
+      "before": {
+        "poses": 1692,
+        "position_rmse_m": 0.019451179762603833,
+        "position_p95_m": 0.025585980973832308,
+        "position_max_m": 0.03124199103042319,
+        "angle_rmse_deg": 0.01798835463234059,
+        "angle_max_deg": 0.04992968283545395
+      },
+      "after": {
+        "poses": 1692,
+        "position_rmse_m": 0.019451179762603833,
+        "position_p95_m": 0.025585980973832308,
+        "position_max_m": 0.03124199103042319,
+        "angle_rmse_deg": 0.01798835463234059,
+        "angle_max_deg": 0.04992968283545395
+      }
+    }
+  },
+  "binaries": {
+    "standalone_core": {
+      "path": "build/cleanup_20261029/fastlio_core/libfast_lio_core.so",
+      "sha256": "410c7c961f96e19c769e29869e6f8de7d7157504a076cd3f84a4b27200ef6f21"
+    },
+    "humble_core": {
+      "path": "build/cleanup_20261029/fastlio_humble/install/fast_lio/lib/libfast_lio_core.so",
+      "sha256": "46f323edf79a9b6aa1ee683c613f9dff8feca7ffad2d082c98ca62e326b40d9e"
+    },
+    "humble_node": {
+      "path": "build/cleanup_20261029/fastlio_humble/install/fast_lio/lib/fast_lio/fastlio_mapping",
+      "sha256": "b278be0a0330bc731fbf21d9e238feb2b588d89983d5df69c93e5ede1f505b46"
+    },
+    "noetic_core": {
+      "path": "build/cleanup_20261029/fastlio_noetic/install/lib/libfast_lio_core.so",
+      "sha256": "570672929dd09c705c1171e1e8cbe8b44f08ef04c4eaac92904a527231a2048f"
+    },
+    "noetic_node": {
+      "path": "build/cleanup_20261029/fastlio_noetic/install/lib/fast_lio/fastlio_mapping",
+      "sha256": "f8092b49393fc7998199234b7d109efec14ee6b0aa6546df9597ce75fd9359d0"
+    }
+  },
+  "protected_artifacts_unchanged": 12,
+  "remaining": [
+    "Twist covariance is not supplied; default zeros are not calibrated uncertainty.",
+    "No new ARM or hardware qualification."
+  ],
+  "consultation": {
+    "cli_requested_model": "claude-opus-5-5",
+    "cli_requested_effort": "high",
+    "reported_canonical_model": "claude-opus-5-5",
+    "rounds": 2,
+    "review_corrections": [
+      "Dropping cross covariance does not necessarily underestimate variance.",
+      "Shared gyro-sample/state noise correlation is not inherently higher order."
+    ],
+    "repo_or_shell_access_given_to_reviewer": false
+  },
+  "local_evidence": "build/odometry_contract_20261029",
+  "evidence_sha256": {
+    "frontend_contract_comparison.json": "9f806984e8dd7d0c5014d819869dffd431a31fedb693f28de00b8ee6a9ea98c3",
+    "frontend_truth.json": "fadfb5d598aa2076141ceeb3aea2d28bdd14a908c7ed428e7e21b43b368a12a4",
+    "timestamp_before.log": "f09353e44e22d24badc2c90f1d48dc800ca48518e17467b95da35b6d2cc4647f",
+    "output_ctest.log": "6d4bbcd929c07fde245e86c156182e5a489fd695f9a41e7c2e4bf599bcea5931",
+    "humble_ctest.log": "86d3bbbd0911fd98232630296a578e342b195f6e32d869d41280781f44201170",
+    "noetic_ctest.log": "089c3ef7a2cfd953bc88d5dbe5c980a1aada70a699ca85a0a88db1cd51124588",
+    "protected_after.json": "d98bc7d0cd2ee9edcd6d4726540d4f56f4d7b1b55831de6857500bbc8f892954"
+  },
+  "related_work": "FAST-LIVO2 has a separate angular-output repair and qualification; high-rate covariance propagation remains unresolved.",
+  "native_replays": {
+    "cases": 16,
+    "cases_per_ros": {
+      "humble": [
+        "extension",
+        "feature32_1",
+        "feature32_2",
+        "feature32_3",
+        "lidar1",
+        "lidar2",
+        "lidar3",
+        "lidar4"
+      ],
+      "noetic": [
+        "extension",
+        "feature32_1",
+        "feature32_2",
+        "feature32_3",
+        "lidar1",
+        "lidar2",
+        "lidar3",
+        "lidar4"
+      ]
+    },
+    "all_state_poses_exact": true,
+    "all_body_cloud_bytes_exact": true,
+    "maximum_body_velocity_projection_difference": 1.49815056194047e-14,
+    "maximum_current_pose_covariance_difference": 1.6940658945086007e-20,
+    "maximum_endpoint_angular_rate_difference": 1.1102230246251565e-16,
+    "timestamp_shift_ns": [
+      4999999,
+      5000000,
+      5000001
+    ],
+    "long_replay_counts_per_ros": {
+      "humble": {
+        "ack": 1710,
+        "odom": 1692,
+        "imu_odom": 33860,
+        "body": 1692,
+        "world": 1692,
+        "path": 169,
+        "gravity": 1692,
+        "tf": 1692
+      },
+      "noetic": {
+        "ack": 1710,
+        "odom": 1692,
+        "imu_odom": 33860,
+        "body": 1692,
+        "world": 1692,
+        "path": 169,
+        "gravity": 1692,
+        "tf": 1692
+      }
+    },
+    "full_results_reference": "build/odometry_contract_20261029/frontend_contract_comparison.json"
+  }
+}

@@ -36,8 +36,10 @@ struct Odometry {
   int64_t stamp_ns = 0;
   Eigen::Vector3d position = Eigen::Vector3d::Zero();
   Eigen::Quaterniond orientation = Eigen::Quaterniond::Identity();
+  // Both velocities refer to the IMU origin and are expressed in its body frame.
   Eigen::Vector3d velocity = Eigen::Vector3d::Zero();
   Eigen::Vector3d angular_velocity = Eigen::Vector3d::Zero();
+  // Parent-frame pose covariance, ordered [position, rotation].
   std::array<double, 36> covariance{};
 };
 enum class OdometryKind { Imu, Lidar };

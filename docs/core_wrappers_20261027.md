@@ -169,9 +169,10 @@ replace real-device qualification.
 The comparison establishes behavior relative to the repaired frontend; it is not
 an absolute 10 cm accuracy acceptance test.
 
-The existing one-frame lag in published scan covariance and the IMU prediction's
-interval-head timestamp semantics are retained. They were not silently changed
-as part of this refactor. The strict cross-environment 1 mm comparison is reported
+That refactor retained the one-frame lag in published scan covariance and the
+IMU prediction's interval-head timestamp. Both are corrected by the
+[2026-10-29 output-contract repair](#odometry-output-contract--2026-10-29).
+The strict cross-environment 1 mm comparison is reported
 separately from successful transport/processing E2E; its gate is not relaxed to
 hide a dependency difference.
 
@@ -329,3 +330,51 @@ accuracy on the robot or fix geometric degeneracy.
 revisions, binary hashes, measurements and limitations. Local raw records are
 under `build/pr_integration_20261029` in the workspace. All 12 protected
 installation/frozen artifacts and the pre-existing Log deletions are unchanged.
+
+## Odometry output contract — 2026-10-29
+
+Both native adapters now receive the same corrected output from the C++ core:
+
+- Pose refers to the IMU origin, in parent coordinates. IMU predictions carry the
+  propagation endpoint timestamp, rather than the preceding IMU timestamp.
+- Linear velocity is `R.transpose() * state.vel`; angular velocity is the latest
+  measured IMU rate minus the current gyro bias. Both use child/body coordinates.
+- Pose covariance comes from the same current filter state as the pose. IKFoM's
+  first two tangent blocks are position and right attitude perturbation. The
+  rotation block and position/rotation cross blocks are projected to parent axes.
+  The previous output swapped these blocks and published the preceding scan's P;
+  prediction messages left pose covariance zero.
+
+`src/odometry_output.h` owns this conversion for scan and prediction outputs.
+The obsolete cached publication covariance is removed. Estimator state updates,
+registration, noise settings and deskew are unchanged. Consumers that previously
+configured N3M `input_linear_velocity_frame=parent` for this frontend must use
+`child` with this revision. A frame-name change alone does not move the reference
+point from the IMU to a different robot origin.
+
+Twist covariance is still not supplied. Its default zeros must not be interpreted
+as a calibrated zero-uncertainty velocity estimate. Completing it requires both
+attitude/velocity cross covariance and a justified angular-rate noise model,
+including correlation with the IMU sample used for propagation. This repair does
+not invent an angular covariance from the bias block alone.
+
+Four-core validation (`0,2,4,6`, Release) passed standalone, Humble and Noetic
+CTest, four targets in each. A new pipeline regression fails the previous code
+by 5 ms. A marked-covariance fixture checks the state-block order, 90-degree
+rotation, cross terms and nonzero gyro bias.
+
+All 16 native ROS cases passed: four point formats, three feature-extraction
+formats and one 171 s frozen replay per ROS version. Relative to `783d62f`, pose,
+gravity, TF and deskewed body-cloud values are exactly preserved. Each long replay
+emits 1,692 scan poses and 33,860 IMU predictions. Body velocity agrees with the
+independent rotation of the old world velocity to within 2e-14; current scan
+covariance agrees with the independently reordered and time-shifted baseline P.
+Prediction timestamps advance by 5 ms, with at most 1 ns of ROS serialization
+rounding. The endpoint angular-rate difference matches half the measured
+head-to-tail gyro difference. One shared fixed truth alignment gives unchanged
+maximum position errors of 31.197 mm (Humble) and 31.242 mm (Noetic).
+
+See [machine-readable evidence](odometry_contract_20261029.json). Local artifacts
+are under `build/odometry_contract_20261029`; original installations and navigation
+frozen libraries were not replaced. These are desktop replay results, not a new
+ARM or physical-robot qualification.
