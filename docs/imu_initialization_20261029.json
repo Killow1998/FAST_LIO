@@ -1,0 +1,705 @@
+{
+  "remote_main": {
+    "n3m": "8afa286559bac7b50ff0bd5c7fbd480a19a917dc",
+    "fastlio": "5d3569015ddeca0d784a7b39811b7ed05a93a53f"
+  },
+  "tested_source": {
+    "n3m": "2522c95 + PR #9 head 41ea06f; reconciled local merge tree identical to tested tree",
+    "fastlio": "b543206; remote merge has identical source",
+    "local_heads_before_record": {
+      "n3mapping": "d1594aabdffd9322a17f12e0be8a2c0f98813e10",
+      "FAST_LIO": "5d3569015ddeca0d784a7b39811b7ed05a93a53f"
+    }
+  },
+  "cpu_affinity": {
+    "jammy": [
+      0,
+      2,
+      4,
+      6
+    ],
+    "rk3588": [
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "build_type": "Release",
+  "tests": {
+    "n3m_humble": "69/69",
+    "n3m_noetic": "67/67",
+    "fastlio_standalone": "4/4",
+    "fastlio_humble": "4/4",
+    "fastlio_noetic": "4/4",
+    "rk3588_registration_before": "10/10",
+    "rk3588_registration_after": "10/10",
+    "rk3588_imu_initialization": "12/12"
+  },
+  "frontend_truth": {
+    "humble": {
+      "alignment": "One fixed baseline-first-pose alignment, shared with candidate; no candidate fitting.",
+      "before": {
+        "poses": 1692,
+        "position_rmse_m": 0.019381195405199614,
+        "position_p95_m": 0.02545435638604535,
+        "position_max_m": 0.0311971642329431,
+        "angle_rmse_deg": 0.017983028501129806,
+        "angle_max_deg": 0.050031502271126405
+      },
+      "after": {
+        "poses": 1692,
+        "position_rmse_m": 0.01937947675352,
+        "position_p95_m": 0.0254543437886334,
+        "position_max_m": 0.031196913724106923,
+        "angle_rmse_deg": 0.017973594938995575,
+        "angle_max_deg": 0.05000659747796068
+      }
+    },
+    "noetic": {
+      "alignment": "One fixed baseline-first-pose alignment, shared with candidate; no candidate fitting.",
+      "before": {
+        "poses": 1692,
+        "position_rmse_m": 0.019451179762603833,
+        "position_p95_m": 0.025585980973832308,
+        "position_max_m": 0.03124199103042319,
+        "angle_rmse_deg": 0.01798835463234059,
+        "angle_max_deg": 0.04992968283545395
+      },
+      "after": {
+        "poses": 1692,
+        "position_rmse_m": 0.01945089909565408,
+        "position_p95_m": 0.025572225281653628,
+        "position_max_m": 0.03124218707797258,
+        "angle_rmse_deg": 0.017989998679727948,
+        "angle_max_deg": 0.049943407486719986
+      }
+    }
+  },
+  "frontend_comparisons": {
+    "humble": {
+      "lidar1": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true
+        },
+        "body_clouds": {
+          "frames": 58,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.0,
+          "max_field_differences": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      },
+      "lidar2": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true
+        },
+        "body_clouds": {
+          "frames": 58,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.0,
+          "max_field_differences": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      },
+      "lidar3": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true
+        },
+        "body_clouds": {
+          "frames": 58,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.0,
+          "max_field_differences": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      },
+      "lidar4": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true
+        },
+        "body_clouds": {
+          "frames": 58,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.0,
+          "max_field_differences": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      },
+      "extension": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0004904862069098348,
+          "exact_values": false,
+          "position_max_m": 0.00014663984160454978,
+          "position_rms_m": 2.185237662251321e-05,
+          "angle_max_rad": 1.534201464574122e-05
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0004957335368915294,
+          "exact_values": false,
+          "position_max_m": 0.00017843494717821346,
+          "position_rms_m": 2.437942527569908e-05,
+          "angle_max_rad": 1.539016209227866e-05
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.00013899311408976933,
+          "exact_values": false,
+          "position_max_m": 0.00014663984160454978,
+          "position_rms_m": 2.185237662251321e-05,
+          "angle_max_rad": 1.534201464574122e-05
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 1.300459765241871e-05,
+          "exact_values": false
+        },
+        "body_clouds": {
+          "frames": 1692,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 5.229967940407473e-05,
+          "max_field_differences": {
+            "x": 5.173683166503906e-05,
+            "y": 4.462897777557373e-05,
+            "z": 1.239776611328125e-05,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      }
+    },
+    "noetic": {
+      "lidar1": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true
+        },
+        "body_clouds": {
+          "frames": 58,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.0,
+          "max_field_differences": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      },
+      "lidar2": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true
+        },
+        "body_clouds": {
+          "frames": 58,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.0,
+          "max_field_differences": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      },
+      "lidar3": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true
+        },
+        "body_clouds": {
+          "frames": 58,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.0,
+          "max_field_differences": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      },
+      "lidar4": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true,
+          "position_max_m": 0.0,
+          "position_rms_m": 0.0,
+          "angle_max_rad": 0.0
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0,
+          "exact_values": true
+        },
+        "body_clouds": {
+          "frames": 58,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.0,
+          "max_field_differences": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      },
+      "extension": {
+        "same_message_counts": true,
+        "same_input_counts": true,
+        "odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0013405286937154398,
+          "exact_values": false,
+          "position_max_m": 0.0006159474124307941,
+          "position_rms_m": 4.175040226437518e-05,
+          "angle_max_rad": 8.7051871874158e-05
+        },
+        "imu_odometry": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0013447003256086623,
+          "exact_values": false,
+          "position_max_m": 0.0007363408592452153,
+          "position_rms_m": 4.6211363104969136e-05,
+          "angle_max_rad": 8.732071483636085e-05
+        },
+        "tf": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 0.0006036252446692814,
+          "exact_values": false,
+          "position_max_m": 0.0006159474124307941,
+          "position_rms_m": 4.175040226437518e-05,
+          "angle_max_rad": 8.7051871874158e-05
+        },
+        "gravity": {
+          "same_shape": true,
+          "same_timestamps": true,
+          "finite": true,
+          "max_field_difference": 9.954444042325865e-06,
+          "exact_values": false
+        },
+        "body_clouds": {
+          "frames": 1692,
+          "same_timestamps": true,
+          "same_point_counts": true,
+          "position_max_m": 0.00013597741267132218,
+          "max_field_differences": {
+            "x": 4.982948303222656e-05,
+            "y": 0.00013303756713867188,
+            "z": 2.86102294921875e-05,
+            "intensity": 0.0,
+            "normal_x": 0.0,
+            "normal_y": 0.0,
+            "normal_z": 0.0,
+            "curvature": 0.0
+          }
+        }
+      }
+    }
+  },
+  "replay_identity": {
+    "input_sha256": "d26e8f7ed709d651ff8cc8db728421ad019318c3faddad336e55cc6a846761db",
+    "duration_sensor_s": 171,
+    "lidar_frames": 1710,
+    "imu_samples": 34215,
+    "output_poses": 1692
+  },
+  "numerical_equivalence_limit": "Four sensor-format replays match exactly in each ROS version. Long-route strict 1e-10 m / 1e-7 rad comparison fails; maximum odometry differences are 0.1466 mm Humble and 0.6159 mm Noetic. Original assertions/results are retained. A fresh old-binary Humble replay matches its old baseline exactly. The cause of the long-route difference is not proven; this is not labeled bitwise equivalence. Shared fixed-alignment truth metrics show no material accuracy regression.",
+  "artifacts": {
+    "n3m_humble_core": {
+      "sha256": "8cddb1d022e12a8b2a50044afad42f81aaa232ce4c398dde734791f2116d047f",
+      "size_bytes": 4329536
+    },
+    "n3m_humble_node": {
+      "sha256": "2b8af2338562832cb9748a8f50c971b1d034dfdf06b57b8ae1187a409ac087de",
+      "size_bytes": 1962432
+    },
+    "n3m_noetic_core": {
+      "sha256": "993299e7b0a1559a08a8ba30e989b316d86294213e8f2f3cbb032c9cef7746e5",
+      "size_bytes": 4304784
+    },
+    "n3m_noetic_node": {
+      "sha256": "7572fe50ee55c849077cb2b2556b9dac589ab66f000803d0a7ba098afaa30490",
+      "size_bytes": 745624
+    },
+    "fastlio_humble_core": {
+      "sha256": "f0e5c50be1d028d57ff7faa7bf760ac37f56cd41c39d5102fbeee8a2370c99a4",
+      "size_bytes": 736104
+    },
+    "fastlio_humble_node": {
+      "sha256": "0c65e4eef6304550b93c9357a33b7c123b82f77e2411d5c90889939cde421add",
+      "size_bytes": 1486016
+    },
+    "fastlio_noetic_core": {
+      "sha256": "26c8c9ecffed2f03aee1692407115505bc5751bc6741e36b11eecb749532ce2f",
+      "size_bytes": 745744
+    },
+    "fastlio_noetic_node": {
+      "sha256": "f8092b49393fc7998199234b7d109efec14ee6b0aa6546df9597ce75fd9359d0",
+      "size_bytes": 221552
+    }
+  },
+  "protected_artifacts_unchanged": 12,
+  "preexisting_fastlio_deletions_unchanged": true,
+  "deployment": "Independent verification outputs only. Original installations, navigation frozen libraries and existing RC tags were not replaced.",
+  "rk3588_imu": {
+    "before": "case,first_ready_sensor_s,last_ready,acceleration_std_g\nquiet,1,1,0\nnoise_0346g,-1,0,0.0347236254896\nnoise_040g,-1,0,0.0400993782411\nrotating,-1,0,0\ncorrelated_one_second,1,1,0.00451118014032\nrecent_motion,1,0,0\nrotated_noise,-1,0,0.0347236254896\n",
+    "after": "case,first_ready_sensor_s,last_ready,acceleration_std_g\nquiet,1,1,0\nnoise_0346g,1,1,0.0347236254896\nnoise_040g,1.28,1,0.0400199750005\nrotating,-1,0,0\ncorrelated_one_second,-1,0,0.00451118014032\nrecent_motion,1,0,0\nrotated_noise,1,1,0.0347236254896\n"
+  },
+  "rk3588_imu_tests": "12/12"
+}

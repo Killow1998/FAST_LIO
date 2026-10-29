@@ -274,3 +274,40 @@ hashes. Noetic uses the official-schema Livox message fixture in its native ROS 
 environment. Original installations, navigation frozen artifacts, N3M code and
 the user's pending Log deletions remain unchanged. The next deployment check is
 hardware capture with the selected sensor; default feature extraction remains off.
+
+## Bounded stationary-start mean precision — 2026-10-29
+
+[PR #1](https://github.com/Killow1998/FAST_LIO/pull/1), merged as `5d35690`,
+replaces the fixed raw-acceleration noise cutoff with bounded mean-precision
+checks. The recent second must be stable before older samples can improve the
+estimate. Retention remains bounded to five seconds / 2048 samples; waiting
+does not relax the acceptance limits. The shared initializer serves both ROS
+wrappers. Motion rejection and sensor/time validation remain active.
+
+Four-core standalone, Humble and Noetic builds each pass 4/4 core test targets.
+On RK3588, all 12 initializer cases pass. A synthetic approximately 0.035 g
+noise stream changes from no initialization within 10 seconds to acceptance
+at sensor time 1.00 s; the 0.040 g stream initializes at 1.28 s. Quiet input
+remains at 1.00 s. Rotation and recent-motion cases remain rejected. A correlated
+one-second example accepted by the old independent-sample check is now rejected.
+These are synthetic input-time measurements, not hardware startup guarantees.
+
+Four sensor-format ROS replays per distribution preserve counts, timestamps,
+poses and clouds exactly. The 171-second route consumes all 1710 scans and
+34215 IMU samples and produces the same 1692 output poses. Its old strict
+`1e-10 m / 1e-7 rad` comparison does not pass: maximum pose differences are
+0.1466 mm in Humble and 0.6159 mm in Noetic. A fresh old-binary Humble control
+matches its original baseline exactly. The cause of the small long-route
+difference has not been proven; this is not a bitwise-equivalence claim.
+
+Independent simulation truth uses one fixed baseline-first-pose alignment,
+shared with the candidate, without trajectory fitting. Humble position RMSE
+is 19.3812 → 19.3795 mm; Noetic is 19.4512 → 19.4509 mm. Maximum error remains
+about 31.2 mm in both environments. No threshold was relaxed and the failed
+strict comparisons are retained. These results do not establish walking
+accuracy on the robot or fix geometric degeneracy.
+
+[Verification evidence](imu_initialization_20261029.json) records the source
+revisions, binary hashes, measurements and limitations. Local raw records are
+under `build/pr_integration_20261029` in the workspace. All 12 protected
+installation/frozen artifacts and the pre-existing Log deletions are unchanged.
