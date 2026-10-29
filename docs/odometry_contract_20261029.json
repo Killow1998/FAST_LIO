@@ -111,7 +111,7 @@
     "noetic_ctest.log": "089c3ef7a2cfd953bc88d5dbe5c980a1aada70a699ca85a0a88db1cd51124588",
     "protected_after.json": "d98bc7d0cd2ee9edcd6d4726540d4f56f4d7b1b55831de6857500bbc8f892954"
   },
-  "related_work": "FAST-LIVO2 has a separate angular-output repair and qualification; high-rate covariance propagation remains unresolved.",
+  "related_work": "FAST-LIVO2 subsequently repairs angular output and high-rate pose covariance propagation; complete twist covariance remains unavailable.",
   "native_replays": {
     "cases": 16,
     "cases_per_ros": {
