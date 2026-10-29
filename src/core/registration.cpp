@@ -44,7 +44,6 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
   laserCloudOri->resize(feats_down_size);
   corr_normvect->resize(feats_down_size);
 
-/** closest surface search and residual computation **/
 #if FAST_LIO_MATCH_THREADS > 1
 #pragma omp parallel for num_threads(FAST_LIO_MATCH_THREADS)
 #endif
@@ -52,7 +51,6 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     PointType &point_body = feats_down_body->points[i];
     PointType &point_world = feats_down_world->points[i];
 
-    /* transform to world frame */
     V3D p_body(point_body.x, point_body.y, point_body.z);
     V3D p_global(s.rot * (s.offset_R_L_I * p_body + s.offset_T_L_I) + s.pos);
     point_world.x = p_global(0);
@@ -65,7 +63,7 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     auto &points_near = Nearest_Points[i];
 
     if (ekfom_data.converge) {
-      /** Find the closest surfaces in the map **/
+
       ikdtree.Nearest_Search(point_world, NUM_MATCH_POINTS, points_near, pointSearchSqDis);
       point_selected_surf[i] = points_near.size() < NUM_MATCH_POINTS        ? false
                                : pointSearchSqDis[NUM_MATCH_POINTS - 1] > 5 ? false
@@ -75,7 +73,7 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     if (!point_selected_surf[i])
       continue;
 
-    VF(4) pabcd;
+    Eigen::Vector4f pabcd;
     point_selected_surf[i] = false;
     if (esti_plane(pabcd, points_near, 0.1f)) {
       float pd2 =
@@ -111,7 +109,6 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
   match_time += omp_get_wtime() - match_start;
   double solve_start_ = omp_get_wtime();
 
-  /*** Computation of Measuremnt Jacobian matrix H and measurents vector ***/
   ekfom_data.h_x = MatrixXd::Zero(effct_feat_num, 12); // 23
   ekfom_data.h.resize(effct_feat_num);
 
@@ -124,11 +121,9 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     M3D point_crossmat;
     point_crossmat << SKEW_SYM_MATRX(point_this);
 
-    /*** get the normal vector of closest surface/corner ***/
     const PointType &norm_p = corr_normvect->points[i];
     V3D norm_vec(norm_p.x, norm_p.y, norm_p.z);
 
-    /*** calculate the Measuremnt Jacobian matrix H ***/
     V3D C(s.rot.conjugate() * norm_vec);
     V3D A(point_crossmat * C);
     if (config.extrinsic_est_en) {
@@ -140,7 +135,6 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
           0.0, 0.0, 0.0, 0.0, 0.0;
     }
 
-    /*** Measuremnt: distance to the closest surface/corner ***/
     ekfom_data.h(i) = -norm_p.intensity;
   }
   solve_time += omp_get_wtime() - solve_start_;

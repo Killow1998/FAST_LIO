@@ -1,8 +1,5 @@
 #include "preprocess.h"
 
-#define RETURN0     0x00
-#define RETURN0AND1 0x10
-
 Preprocess::Preprocess()
   :feature_enabled(0), lidar_type(AVIA), blind(0.01), point_filter_num(1)
 {
@@ -31,13 +28,13 @@ Preprocess::Preprocess()
   smallp_intersect = cos(smallp_intersect/180*M_PI);
 }
 
-void Preprocess::process(const fast_lio::LivoxScan &msg, PointCloudXYZI::Ptr &pcl_out)
+void Preprocess::process(const fast_lio::LivoxScan &msg, PointCloudXYZI &pcl_out)
 {
   avia_handler(msg);
-  *pcl_out = pl_surf;
+  pcl_out = pl_surf;
 }
 
-void Preprocess::process(const pcl::PCLPointCloud2 &msg, PointCloudXYZI::Ptr &pcl_out)
+void Preprocess::process(const pcl::PCLPointCloud2 &msg, PointCloudXYZI &pcl_out)
 {
   switch (time_unit)
   {
@@ -76,5 +73,5 @@ void Preprocess::process(const pcl::PCLPointCloud2 &msg, PointCloudXYZI::Ptr &pc
     printf("Error LiDAR Type");
     break;
   }
-  *pcl_out = pl_surf;
+  pcl_out = pl_surf;
 }

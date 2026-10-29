@@ -24,7 +24,7 @@ bool Mapper::pushLivox(double stamp, const LivoxScan &scan) {
   if (!std::isfinite(stamp) || stamp < 0.)
     return false;
   PointCloudXYZI::Ptr cloud(new PointCloudXYZI);
-  impl_->preprocess.process(scan, cloud);
+  impl_->preprocess.process(scan, *cloud);
   impl_->enqueue(stamp, std::move(cloud), true);
   return true;
 }
@@ -35,7 +35,7 @@ bool Mapper::pushPointCloud(double stamp, const pcl::PCLPointCloud2 &scan) {
       uint64_t(scan.row_step) * scan.height > scan.data.size())
     return false;
   PointCloudXYZI::Ptr cloud(new PointCloudXYZI);
-  impl_->preprocess.process(scan, cloud);
+  impl_->preprocess.process(scan, *cloud);
   impl_->enqueue(stamp, std::move(cloud), false);
   return true;
 }

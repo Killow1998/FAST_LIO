@@ -99,9 +99,9 @@ void Mapper::Impl::map_incremental() {
   PointToAdd.reserve(feats_down_size);
   PointNoNeedDownsample.reserve(feats_down_size);
   for (int i = 0; i < feats_down_size; i++) {
-    /* transform to world frame */
+
     pointBodyToWorld(&(feats_down_body->points[i]), &(feats_down_world->points[i]));
-    /* decide if need add to map */
+
     if (!Nearest_Points[i].empty() && flg_EKF_inited) {
       const PointVector &points_near = Nearest_Points[i];
       bool need_add = true;

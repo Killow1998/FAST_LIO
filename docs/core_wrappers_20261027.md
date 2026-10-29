@@ -14,6 +14,24 @@ Original installed programs and navigation frozen libraries were not replaced.
 
 ## Design
 
+The [2026-10-29 cleanup](cleanup_20261029.json) removes unused legacy state/math
+code from private `common_lib.h` (256 to 98 lines), not the installed SDK.
+Preprocessing writes into an already-owned cloud reference; plane scratch
+variables are call-local. The endpoint scan establishes the valid range before
+the inner plane loop, so that loop does not repeat the bounds check. Sensor
+entry validation and estimator thresholds are retained. The three old `Log/`
+analysis files consumed formats the current bounded logger no longer emits.
+
+Four-core validation passes all four CTest targets in standalone, Humble and
+Noetic builds. Seven short native fixtures per ROS, including feature extraction,
+match their existing baselines exactly. Both 171-second route replays retain all
+input/output counts and timestamps. They are not numerically identical: maximum
+scan-position differences are 0.00005 mm (Humble) and 0.616 mm (Noetic).
+With one shared fixed alignment per before/after pair, truth position RMSE remains
+19.3795 mm and 19.4512 mm respectively; the largest RMSE change is below 0.0003 mm.
+No acceptance threshold was relaxed. Full differences, resource observations
+and validation limits are retained in the linked evidence.
+
 `fast_lio_core` owns one mapper's queues, preprocessing, IMU propagation, filter,
 ikd-Tree, map insertion and optional PCD/log output. There is no ROS header or
 linked ROS library in the core. The SDK exports `fast_lio::fast_lio_core`; an

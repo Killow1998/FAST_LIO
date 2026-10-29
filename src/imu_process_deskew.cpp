@@ -9,7 +9,7 @@ bool time_list(const PointType &a, const PointType &b) { return a.curvature < b.
 void ImuProcess::UndistortPcl(const MeasureGroup &meas,
                               esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state,
                               PointCloudXYZI &pcl_out, const fast_lio::OdometryObserver &observer) {
-  /*** add the imu of the last frame-tail to the of current frame-head ***/
+
   auto v_imu = meas.imu;
   v_imu.push_front(last_imu_);
   double imu_beg_time = v_imu.front()->seconds();
@@ -23,17 +23,14 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
     pcl_end_time = meas.lidar_beg_time;
   }
 
-  /*** sort point clouds by offset time ***/
   pcl_out = *(meas.lidar);
   sort(pcl_out.points.begin(), pcl_out.points.end(), time_list);
 
-  /*** Initialize IMU pose ***/
   state_ikfom imu_state = kf_state.get_x();
   IMUpose.clear();
   IMUpose.push_back(set_pose6d(0.0, acc_s_last, angvel_last, imu_state.vel, imu_state.pos,
                                imu_state.rot.toRotationMatrix()));
 
-  /*** forward propagation at each imu point ***/
   V3D angvel_avr, acc_avr, acc_imu, vel_imu, pos_imu;
   M3D R_imu;
 
@@ -70,7 +67,6 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
     Q.block<3, 3>(9, 9).diagonal() = cov_bias_acc;
     kf_state.predict(dt, Q, in);
 
-    /* save the poses at each IMU measurements */
     imu_state = kf_state.get_x();
     angvel_last = angvel_avr - imu_state.bg;
     acc_s_last = imu_state.rot * (acc_avr - imu_state.ba);
@@ -91,7 +87,6 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
       observer(fast_lio::OdometryKind::Imu, predicted);
   }
 
-  /*** calculated the pos and attitude prediction at the frame-end ***/
   double note = pcl_end_time > imu_end_time ? 1.0 : -1.0;
   dt = note * (pcl_end_time - imu_end_time);
   kf_state.predict(dt, Q, in);
@@ -100,7 +95,6 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
   last_imu_ = meas.imu.back();
   last_lidar_end_time_ = pcl_end_time;
 
-  /*** undistort each lidar point (backward propagation) ***/
   if (pcl_out.points.begin() == pcl_out.points.end())
     return;
 
@@ -118,11 +112,7 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
       for (; it_pcl->curvature / double(1000) > head->offset_time; it_pcl--) {
         dt = it_pcl->curvature / double(1000) - head->offset_time;
 
-        /* Transform to the 'end' frame, using only the rotation
-         * Note: Compensation direction is INVERSE of Frame's moving direction
-         * So if we want to compensate a point at timestamp-i to the frame-e
-         * P_compensate = R_imu_e ^ T * (R_i * P_i + T_ei) where T_ei is
-         * represented in global frame */
+        // Transform the acquisition-time lidar point into the scan-end lidar frame.
         M3D R_i(R_imu * Exp(angvel_avr, dt));
 
         V3D P_i(it_pcl->x, it_pcl->y, it_pcl->z);
@@ -131,9 +121,8 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas,
             imu_state.offset_R_L_I.conjugate() *
             (imu_state.rot.conjugate() *
                  (R_i * (imu_state.offset_R_L_I * P_i + imu_state.offset_T_L_I) + T_ei) -
-             imu_state.offset_T_L_I); // not accurate!
+             imu_state.offset_T_L_I);
 
-        // save Undistorted points and their rotation
         it_pcl->x = P_compensate(0);
         it_pcl->y = P_compensate(1);
         it_pcl->z = P_compensate(2);

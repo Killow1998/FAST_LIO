@@ -144,8 +144,7 @@ FrameOutput Mapper::Impl::process() {
   out.odometry.orientation = Eigen::Quaterniond(state_point.rot);
   out.odometry.velocity = state_point.vel;
   out.odometry.angular_velocity = Measures.imu.back()->angular_velocity;
-  // Preserve the existing published covariance sequence in this structural
-  // change.
+  // Published covariance retains its existing one-scan lag.
   out.odometry.covariance = published_covariance;
   if (observer)
     observer(OdometryKind::Lidar, out.odometry);

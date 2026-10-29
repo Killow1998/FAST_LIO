@@ -1,0 +1,249 @@
+{
+  "date": "2026-10-29",
+  "baseline": "31dccf2",
+  "scope": "Private implementation cleanup only; public Mapper API, configuration, sensor formats, initialization and estimator acceptance criteria retained.",
+  "cpu_affinity": [
+    0,
+    2,
+    4,
+    6
+  ],
+  "build_type": "Release",
+  "changes": [
+    "Remove unused legacy 18-dimensional StatesGroup, unused math helpers and macros from private common_lib.h.",
+    "Preprocess output uses an already-owned cloud reference; plane scratch vectors are call-local.",
+    "Remove the inner plane-loop bounds check implied by the established endpoint range.",
+    "Remove stale deskew comments and three obsolete Log analysis files whose input formats are no longer emitted."
+  ],
+  "ctest": {
+    "standalone": {
+      "passed": 4,
+      "total": 4
+    },
+    "humble": {
+      "passed": 4,
+      "total": 4
+    },
+    "noetic": {
+      "passed": 4,
+      "total": 4
+    }
+  },
+  "short_native_e2e": {
+    "per_ros": 7,
+    "ros": [
+      "humble",
+      "noetic"
+    ],
+    "raw_formats": [
+      "Livox",
+      "Velodyne",
+      "Ouster",
+      "MARSIM"
+    ],
+    "feature_enabled_formats": [
+      "Livox",
+      "Velodyne",
+      "Ouster"
+    ],
+    "result": "All 14 runs match their respective existing baselines exactly in recorded numerical fields, timestamps, clouds and message counts. Feature-enabled fixtures use the existing feature_init_20261027 baseline; raw fixtures use pr_integration_20261029."
+  },
+  "route_input": {
+    "duration_s": 171,
+    "lidar_scans": 1710,
+    "imu_samples": 34215,
+    "mapped_frames": 1692,
+    "sha256": "d26e8f7ed709d651ff8cc8db728421ad019318c3faddad336e55cc6a846761db",
+    "source": "Existing SpRobo continuation sensor recording; truth is used only for scoring."
+  },
+  "route_truth": {
+    "humble": {
+      "alignment": "One fixed baseline-first-pose alignment, shared with candidate; no candidate fitting.",
+      "before": {
+        "poses": 1692,
+        "position_rmse_m": 0.01937947675352,
+        "position_p95_m": 0.0254543437886334,
+        "position_max_m": 0.031196913724106923,
+        "angle_rmse_deg": 0.017973594938995575,
+        "angle_max_deg": 0.05000659747796068
+      },
+      "after": {
+        "poses": 1692,
+        "position_rmse_m": 0.01937947677470874,
+        "position_p95_m": 0.0254543437886334,
+        "position_max_m": 0.031196913724106923,
+        "angle_rmse_deg": 0.01797359612523758,
+        "angle_max_deg": 0.05000659747796068
+      }
+    },
+    "noetic": {
+      "alignment": "One fixed baseline-first-pose alignment, shared with candidate; no candidate fitting.",
+      "before": {
+        "poses": 1692,
+        "position_rmse_m": 0.01945089909565408,
+        "position_p95_m": 0.025572225281653628,
+        "position_max_m": 0.03124218707797258,
+        "angle_rmse_deg": 0.017989998679727948,
+        "angle_max_deg": 0.049943407486719986
+      },
+      "after": {
+        "poses": 1692,
+        "position_rmse_m": 0.019451179762603833,
+        "position_p95_m": 0.025585980973832308,
+        "position_max_m": 0.03124199103042319,
+        "angle_rmse_deg": 0.01798835463234059,
+        "angle_max_deg": 0.04992968283545395
+      }
+    }
+  },
+  "route_strict_comparison": {
+    "humble": {
+      "same_message_counts": true,
+      "same_input_counts": true,
+      "odometry": {
+        "same_shape": true,
+        "same_timestamps": true,
+        "finite": true,
+        "max_field_difference": 1.618783989883535e-07,
+        "exact_values": false,
+        "position_max_m": 5.017727174221668e-08,
+        "position_rms_m": 4.8324117508855155e-09,
+        "angle_max_rad": 7.0881511717544304e-09
+      },
+      "imu_odometry": {
+        "same_shape": true,
+        "same_timestamps": true,
+        "finite": true,
+        "max_field_difference": 1.6336993698823354e-07,
+        "exact_values": false,
+        "position_max_m": 6.247101065375868e-08,
+        "position_rms_m": 5.514735160612335e-09,
+        "angle_max_rad": 7.109988490559342e-09
+      },
+      "tf": {
+        "same_shape": true,
+        "same_timestamps": true,
+        "finite": true,
+        "max_field_difference": 4.2933403721079344e-08,
+        "exact_values": false,
+        "position_max_m": 5.017727174221668e-08,
+        "position_rms_m": 4.8324117508855155e-09,
+        "angle_max_rad": 7.0881511717544304e-09
+      },
+      "gravity": {
+        "same_shape": true,
+        "same_timestamps": true,
+        "finite": true,
+        "max_field_difference": 2.674909041228829e-09,
+        "exact_values": false
+      },
+      "body_clouds": {
+        "frames": 1692,
+        "same_timestamps": true,
+        "same_point_counts": true,
+        "position_max_m": 3.814813679170524e-06,
+        "max_field_differences": {
+          "x": 3.814697265625e-06,
+          "y": 3.814697265625e-06,
+          "z": 9.5367431640625e-07,
+          "intensity": 0.0,
+          "normal_x": 0.0,
+          "normal_y": 0.0,
+          "normal_z": 0.0,
+          "curvature": 0.0
+        }
+      }
+    },
+    "noetic": {
+      "same_message_counts": true,
+      "same_input_counts": true,
+      "odometry": {
+        "same_shape": true,
+        "same_timestamps": true,
+        "finite": true,
+        "max_field_difference": 0.0013405286937154398,
+        "exact_values": false,
+        "position_max_m": 0.0006159474124307941,
+        "position_rms_m": 4.175040226437518e-05,
+        "angle_max_rad": 8.7051871874158e-05
+      },
+      "imu_odometry": {
+        "same_shape": true,
+        "same_timestamps": true,
+        "finite": true,
+        "max_field_difference": 0.0013447003256086623,
+        "exact_values": false,
+        "position_max_m": 0.0007363408592452153,
+        "position_rms_m": 4.6211363104969136e-05,
+        "angle_max_rad": 8.732071483636085e-05
+      },
+      "tf": {
+        "same_shape": true,
+        "same_timestamps": true,
+        "finite": true,
+        "max_field_difference": 0.0006036252446692814,
+        "exact_values": false,
+        "position_max_m": 0.0006159474124307941,
+        "position_rms_m": 4.175040226437518e-05,
+        "angle_max_rad": 8.7051871874158e-05
+      },
+      "gravity": {
+        "same_shape": true,
+        "same_timestamps": true,
+        "finite": true,
+        "max_field_difference": 9.954444042325865e-06,
+        "exact_values": false
+      },
+      "body_clouds": {
+        "frames": 1692,
+        "same_timestamps": true,
+        "same_point_counts": true,
+        "position_max_m": 0.00013597741267132218,
+        "max_field_differences": {
+          "x": 4.982948303222656e-05,
+          "y": 0.00013303756713867188,
+          "z": 2.86102294921875e-05,
+          "intensity": 0.0,
+          "normal_x": 0.0,
+          "normal_y": 0.0,
+          "normal_z": 0.0,
+          "curvature": 0.0
+        }
+      }
+    }
+  },
+  "route_resource_observation": {
+    "humble": {
+      "wall_s": 86.54701519897208,
+      "node_cpu_s": 20.15,
+      "mean_cores": 0.2328214318388108,
+      "peak_rss_bytes": 254648320,
+      "ack_observed_latency_s": {
+        "p50": 0.014954841462895274,
+        "p95": 0.017405839246930555,
+        "max": 0.024419048917479813
+      },
+      "node_exit_code": 0,
+      "errors": []
+    },
+    "noetic": {
+      "wall_s": 86.54026048991363,
+      "node_cpu_s": 20.74,
+      "mean_cores": 0.2396572402554447,
+      "peak_rss_bytes": 169246720,
+      "ack_observed_latency_s": {
+        "p50": 0.008215524547267705,
+        "p95": 0.01020661803195253,
+        "max": 0.03139718307647854
+      },
+      "node_exit_code": 0,
+      "errors": []
+    }
+  },
+  "limits": [
+    "Both long-route comparisons fail the extra 1e-10 m / 1e-7 rad numerical-identity gate; neither is claimed bitwise equal. No production or accuracy threshold changed.",
+    "The source of the small long-route numerical differences is not isolated. Truth RMSE changes are below 0.0003 mm; all input/output counts and timestamps match.",
+    "Resource figures are single-run observations, not a controlled speedup claim. No new ARM or physical-robot accuracy qualification."
+  ],
+  "protected_artifacts": "Original installations and navigation frozen libraries unchanged; no deployment was performed."
+}

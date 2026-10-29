@@ -8,8 +8,6 @@
 
 using namespace std;
 
-#define IS_VALID(a)  ((abs(a)>1e8) ? true : false)
-
 typedef pcl::PointXYZINormal PointType;
 typedef pcl::PointCloud<PointType> PointCloudXYZI;
 
@@ -88,8 +86,8 @@ class Preprocess
 
   Preprocess();
   
-  void process(const fast_lio::LivoxScan &msg, PointCloudXYZI::Ptr &pcl_out);
-  void process(const pcl::PCLPointCloud2 &msg, PointCloudXYZI::Ptr &pcl_out);
+  void process(const fast_lio::LivoxScan &msg, PointCloudXYZI &pcl_out);
+  void process(const pcl::PCLPointCloud2 &msg, PointCloudXYZI &pcl_out);
 
   PointCloudXYZI pl_full, pl_corn, pl_surf;
   PointCloudXYZI pl_buff[128]; //maximum 128 line lidar
@@ -109,7 +107,6 @@ class Preprocess
   void extractFeatures();
   void give_feature(PointCloudXYZI &pl, vector<orgtype> &types);
   int  plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, uint i, uint &i_nex, Eigen::Vector3d &curr_direct);
-  bool small_plane(const PointCloudXYZI &pl, vector<orgtype> &types, uint i_cur, uint &i_nex, Eigen::Vector3d &curr_direct);
   bool edge_jump_judge(const PointCloudXYZI &pl, vector<orgtype> &types, uint i, Surround nor_dir);
   
   int group_size;
@@ -120,6 +117,5 @@ class Preprocess
   double cos160;
   double edgea, edgeb;
   double smallp_intersect, smallp_ratio;
-  double vx, vy, vz;
 };
 #endif

@@ -5,7 +5,7 @@ int Preprocess::plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, ui
   double group_dis = disA*types[i_cur].range + disB;
   group_dis = group_dis * group_dis;
 
-  double two_dis;
+  double two_dis, vx, vy, vz;
   vector<double> disarr;
   disarr.reserve(20);
 
@@ -47,7 +47,6 @@ int Preprocess::plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, ui
   double v1[3], v2[3];
   for(uint j=i_cur+1; j<i_nex; j++)
   {
-    if((j >= pl.size()) || (i_cur >= pl.size())) break;
     v1[0] = pl[j].x - pl[i_cur].x;
     v1[1] = pl[j].y - pl[i_cur].y;
     v1[2] = pl[j].z - pl[i_cur].z;

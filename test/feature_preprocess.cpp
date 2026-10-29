@@ -32,7 +32,7 @@ PointCloudXYZI extract(const fast_lio::LivoxScan &scan, int lidar_type,
   preprocess.time_unit = NS;
   PointCloudXYZI::Ptr output(new PointCloudXYZI);
   if (lidar_type == AVIA) {
-    preprocess.process(scan, output);
+    preprocess.process(scan, *output);
   } else {
     pcl::PointCloud<ouster_ros::Point> points;
     for (const auto &input : scan.points) {
@@ -44,7 +44,7 @@ PointCloudXYZI extract(const fast_lio::LivoxScan &scan, int lidar_type,
     }
     pcl::PCLPointCloud2 message;
     pcl::toPCLPointCloud2(points, message);
-    preprocess.process(message, output);
+    preprocess.process(message, *output);
   }
   PointCloudXYZI result = *output;
   preprocess.~Preprocess();
