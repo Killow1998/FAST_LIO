@@ -43,15 +43,11 @@ struct Mapper::Impl {
   PointCloudXYZI::Ptr feats_down_body{new PointCloudXYZI};
   PointCloudXYZI::Ptr feats_down_world{new PointCloudXYZI};
   PointCloudXYZI::Ptr normvec{new PointCloudXYZI};
-  PointCloudXYZI::Ptr laserCloudOri{new PointCloudXYZI};
-  PointCloudXYZI::Ptr corr_normvect{new PointCloudXYZI};
   PointCloudXYZI::Ptr saved_points{new PointCloudXYZI};
   std::vector<unsigned char> point_selected_surf;
   std::vector<PointVector> Nearest_Points;
-  std::vector<BoxPointType> cub_needrm;
   BoxPointType LocalMap_Points;
   bool Localmap_Initialized = false, flg_EKF_inited = false;
-  int feats_down_size = 0, effct_feat_num = 0;
   double match_time = 0., solve_time = 0.;
   int path_frames = 0, save_frames = 0, pcd_index = 0;
   std::string diagnostic;

@@ -115,27 +115,27 @@ FrameOutput Mapper::Impl::process() {
   lasermap_fov_segment();
   downSizeFilterSurf.setInputCloud(feats_undistort);
   downSizeFilterSurf.filter(*feats_down_body);
-  feats_down_size = feats_down_body->size();
+  const auto point_count = feats_down_body->size();
   if (ikdtree.Root_Node == nullptr) {
-    if (feats_down_size > 5) {
+    if (point_count > 5) {
       ikdtree.set_downsample_param(config.filter_size_map_min);
-      feats_down_world->resize(feats_down_size);
-      for (int i = 0; i < feats_down_size; ++i)
+      feats_down_world->resize(point_count);
+      for (std::size_t i = 0; i < point_count; ++i)
         pointBodyToWorld(&feats_down_body->points[i], &feats_down_world->points[i]);
       ikdtree.Build(feats_down_world->points);
     }
     out.status = ikdtree.Root_Node ? FrameStatus::MapInitialized : FrameStatus::InsufficientPoints;
     return out;
   }
-  if (feats_down_size < 5) {
+  if (point_count < 5) {
     out.status = FrameStatus::InsufficientPoints;
     return out;
   }
-  normvec->resize(feats_down_size);
-  feats_down_world->resize(feats_down_size);
-  if (point_selected_surf.size() < size_t(feats_down_size))
-    point_selected_surf.resize(feats_down_size, 1);
-  Nearest_Points.resize(feats_down_size);
+  normvec->resize(point_count);
+  feats_down_world->resize(point_count);
+  if (point_selected_surf.size() < point_count)
+    point_selected_surf.resize(point_count, 1);
+  Nearest_Points.resize(point_count);
   double solve_H_time = 0.;
   kf.update_iterated_dyn_share_modified(.001, solve_H_time);
   state_point = kf.get_x();
@@ -190,7 +190,7 @@ FrameOutput Mapper::Impl::process() {
     std::ostringstream row;
     row << std::setprecision(16) << lidar_end_time << ',' << state_point.pos.transpose() << ','
         << state_point.rot.coeffs().transpose() << ',' << (omp_get_wtime() - started) << ','
-        << match_time << ',' << solve_time << ',' << feats_down_size << ',' << ikdtree.size();
+        << match_time << ',' << solve_time << ',' << point_count << ',' << ikdtree.size();
     runtime_log.write(row.str());
   }
   return out;

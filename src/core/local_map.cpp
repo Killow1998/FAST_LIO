@@ -47,7 +47,6 @@ void Mapper::Impl::pointBodyToWorld(PointType const *const pi, PointType *const 
   po->intensity = pi->intensity;
 }
 void Mapper::Impl::lasermap_fov_segment() {
-  cub_needrm.clear();
   V3D pos_LiD = pos_lid;
   if (!Localmap_Initialized) {
     for (int i = 0; i < 3; i++) {
@@ -68,6 +67,7 @@ void Mapper::Impl::lasermap_fov_segment() {
   }
   if (!need_move)
     return;
+  std::vector<BoxPointType> boxes_to_remove;
   BoxPointType New_LocalMap_Points, tmp_boxpoints;
   New_LocalMap_Points = LocalMap_Points;
   float mov_dist = max((config.cube_len - 2.0 * MOV_THRESHOLD * config.DET_RANGE) * 0.5 * 0.9,
@@ -78,27 +78,28 @@ void Mapper::Impl::lasermap_fov_segment() {
       New_LocalMap_Points.vertex_max[i] -= mov_dist;
       New_LocalMap_Points.vertex_min[i] -= mov_dist;
       tmp_boxpoints.vertex_min[i] = LocalMap_Points.vertex_max[i] - mov_dist;
-      cub_needrm.push_back(tmp_boxpoints);
+      boxes_to_remove.push_back(tmp_boxpoints);
     } else if (dist_to_map_edge[i][1] <= MOV_THRESHOLD * config.DET_RANGE) {
       New_LocalMap_Points.vertex_max[i] += mov_dist;
       New_LocalMap_Points.vertex_min[i] += mov_dist;
       tmp_boxpoints.vertex_max[i] = LocalMap_Points.vertex_min[i] + mov_dist;
-      cub_needrm.push_back(tmp_boxpoints);
+      boxes_to_remove.push_back(tmp_boxpoints);
     }
   }
   LocalMap_Points = New_LocalMap_Points;
 
   PointVector removed;
   ikdtree.acquire_removed_points(removed);
-  if (cub_needrm.size() > 0)
-    ikdtree.Delete_Point_Boxes(cub_needrm);
+  if (!boxes_to_remove.empty())
+    ikdtree.Delete_Point_Boxes(boxes_to_remove);
 }
 void Mapper::Impl::map_incremental() {
   PointVector PointToAdd;
   PointVector PointNoNeedDownsample;
-  PointToAdd.reserve(feats_down_size);
-  PointNoNeedDownsample.reserve(feats_down_size);
-  for (int i = 0; i < feats_down_size; i++) {
+  const auto point_count = feats_down_body->size();
+  PointToAdd.reserve(point_count);
+  PointNoNeedDownsample.reserve(point_count);
+  for (std::size_t i = 0; i < point_count; ++i) {
 
     pointBodyToWorld(&(feats_down_body->points[i]), &(feats_down_world->points[i]));
 

@@ -33,21 +33,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "mapper_impl.h"
+#include <algorithm>
 #include <omp.h>
 
 namespace fast_lio {
 void Mapper::Impl::h_share_model(state_ikfom &s,
                                  esekfom::dyn_share_datastruct<double> &ekfom_data) {
   double match_start = omp_get_wtime();
-  laserCloudOri->clear();
-  corr_normvect->clear();
-  laserCloudOri->resize(feats_down_size);
-  corr_normvect->resize(feats_down_size);
+  const auto point_count = feats_down_body->size();
 
 #if FAST_LIO_MATCH_THREADS > 1
 #pragma omp parallel for num_threads(FAST_LIO_MATCH_THREADS)
 #endif
-  for (int i = 0; i < feats_down_size; i++) {
+  for (std::size_t i = 0; i < point_count; ++i) {
     PointType &point_body = feats_down_body->points[i];
     PointType &point_world = feats_down_world->points[i];
 
@@ -58,16 +56,12 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     point_world.z = p_global(2);
     point_world.intensity = point_body.intensity;
 
-    vector<float> pointSearchSqDis(NUM_MATCH_POINTS);
-
     auto &points_near = Nearest_Points[i];
-
     if (ekfom_data.converge) {
-
-      ikdtree.Nearest_Search(point_world, NUM_MATCH_POINTS, points_near, pointSearchSqDis);
-      point_selected_surf[i] = points_near.size() < NUM_MATCH_POINTS        ? false
-                               : pointSearchSqDis[NUM_MATCH_POINTS - 1] > 5 ? false
-                                                                            : true;
+      vector<float> squared_distances(NUM_MATCH_POINTS);
+      ikdtree.Nearest_Search(point_world, NUM_MATCH_POINTS, points_near, squared_distances);
+      point_selected_surf[i] = points_near.size() >= NUM_MATCH_POINTS &&
+                               !(squared_distances.back() > 5);
     }
 
     if (!point_selected_surf[i])
@@ -90,17 +84,9 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     }
   }
 
-  effct_feat_num = 0;
-
-  for (int i = 0; i < feats_down_size; i++) {
-    if (point_selected_surf[i]) {
-      laserCloudOri->points[effct_feat_num] = feats_down_body->points[i];
-      corr_normvect->points[effct_feat_num] = normvec->points[i];
-      effct_feat_num++;
-    }
-  }
-
-  if (effct_feat_num < 1) {
+  const auto matched_count = std::count(point_selected_surf.begin(),
+                                        point_selected_surf.begin() + point_count, 1);
+  if (matched_count == 0) {
     ekfom_data.valid = false;
     diagnostic = "No effective points";
     return;
@@ -109,11 +95,13 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
   match_time += omp_get_wtime() - match_start;
   double solve_start_ = omp_get_wtime();
 
-  ekfom_data.h_x = MatrixXd::Zero(effct_feat_num, 12); // 23
-  ekfom_data.h.resize(effct_feat_num);
+  ekfom_data.h_x = MatrixXd::Zero(matched_count, 12);
+  ekfom_data.h.resize(matched_count);
 
-  for (int i = 0; i < effct_feat_num; i++) {
-    const PointType &laser_p = laserCloudOri->points[i];
+  Eigen::Index row = 0;
+  for (std::size_t i = 0; i < point_count; ++i) {
+    if (!point_selected_surf[i]) continue;
+    const PointType &laser_p = feats_down_body->points[i];
     V3D point_this_be(laser_p.x, laser_p.y, laser_p.z);
     M3D point_be_crossmat;
     point_be_crossmat << SKEW_SYM_MATRX(point_this_be);
@@ -121,21 +109,22 @@ void Mapper::Impl::h_share_model(state_ikfom &s,
     M3D point_crossmat;
     point_crossmat << SKEW_SYM_MATRX(point_this);
 
-    const PointType &norm_p = corr_normvect->points[i];
+    const PointType &norm_p = normvec->points[i];
     V3D norm_vec(norm_p.x, norm_p.y, norm_p.z);
 
     V3D C(s.rot.conjugate() * norm_vec);
     V3D A(point_crossmat * C);
     if (config.extrinsic_est_en) {
-      V3D B(point_be_crossmat * s.offset_R_L_I.conjugate() * C); // s.rot.conjugate()*norm_vec);
-      ekfom_data.h_x.block<1, 12>(i, 0) << norm_p.x, norm_p.y, norm_p.z, VEC_FROM_ARRAY(A),
+      V3D B(point_be_crossmat * s.offset_R_L_I.conjugate() * C);
+      ekfom_data.h_x.block<1, 12>(row, 0) << norm_p.x, norm_p.y, norm_p.z, VEC_FROM_ARRAY(A),
           VEC_FROM_ARRAY(B), VEC_FROM_ARRAY(C);
     } else {
-      ekfom_data.h_x.block<1, 12>(i, 0) << norm_p.x, norm_p.y, norm_p.z, VEC_FROM_ARRAY(A), 0.0,
+      ekfom_data.h_x.block<1, 12>(row, 0) << norm_p.x, norm_p.y, norm_p.z, VEC_FROM_ARRAY(A), 0.0,
           0.0, 0.0, 0.0, 0.0, 0.0;
     }
 
-    ekfom_data.h(i) = -norm_p.intensity;
+    ekfom_data.h(row) = -norm_p.intensity;
+    ++row;
   }
   solve_time += omp_get_wtime() - solve_start_;
 }
